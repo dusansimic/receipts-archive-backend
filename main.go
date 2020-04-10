@@ -192,7 +192,7 @@ func main() {
 				query = query.Set("address", locationData.Address)
 			}
 
-			queryString, queryStringArgs, err := query.Where(sq.Eq{"public_id": locationData.PublicId}).ToSql()
+			queryString, queryStringArgs, err := query.Where(sq.Eq{"public_id": locationData.PublicID}).ToSql()
 			if err != nil {
 				log.Fatalln(err.Error())
 			}
@@ -225,7 +225,7 @@ func main() {
 				return
 			}
 
-			query := sq.Delete("locations").Where(sq.Eq{"public_id": locationData.PublicId})
+			query := sq.Delete("locations").Where(sq.Eq{"public_id": locationData.PublicID})
 			queryString, queryStringArgs, err := query.ToSql()
 			if err != nil {
 				log.Fatalln(err.Error())
@@ -293,14 +293,14 @@ func main() {
 				return
 			}
 
-			userIdQuery := sq.Select("id").From("users").Where(sq.Eq{"public_id": itemData.CreatedBy})
-			userIdQueryString, userIdQueryStringArgs, err := userIdQuery.ToSql()
+			userIDQuery := sq.Select("id").From("users").Where(sq.Eq{"public_id": itemData.CreatedBy})
+			userIDQueryString, userIDQueryStringArgs, err := userIDQuery.ToSql()
 			if err != nil {
 				log.Fatalln(err.Error())
 			}
 
-			user := UserId{}
-			if err := db.Get(&user, userIdQueryString, userIdQueryStringArgs...); err != nil {
+			user := UserID{}
+			if err := db.Get(&user, userIDQueryString, userIDQueryStringArgs...); err != nil {
 				log.Fatalln(err.Error())
 			}
 
@@ -311,7 +311,7 @@ func main() {
 
 			// fmt.Println(itemData)
 
-			query := sq.Insert("items").Columns("public_id", "created_by", "name", "price", "unit").Values(uuid, user.Id, itemData.Name, itemData.Price, itemData.Unit)
+			query := sq.Insert("items").Columns("public_id", "created_by", "name", "price", "unit").Values(uuid, user.ID, itemData.Name, itemData.Price, itemData.Unit)
 
 			queryString, queryStringArgs, err := query.ToSql()
 			if err != nil {
@@ -358,7 +358,7 @@ func main() {
 				query = query.Set("unit", itemData.Unit)
 			}
 
-			queryString, queryStringArgs, err := query.Where(sq.Eq{"public_id": itemData.PublicId}).ToSql()
+			queryString, queryStringArgs, err := query.Where(sq.Eq{"public_id": itemData.PublicID}).ToSql()
 			if err != nil {
 				log.Fatalln(err.Error())
 			}
@@ -391,7 +391,7 @@ func main() {
 				return
 			}
 
-			query := sq.Delete("items").Where(sq.Eq{"public_id": itemData.PublicId})
+			query := sq.Delete("items").Where(sq.Eq{"public_id": itemData.PublicID})
 			queryString, queryStringArgs, err := query.ToSql()
 			if err != nil {
 				log.Fatalln(err.Error())
@@ -422,30 +422,30 @@ func main() {
 				return
 			}
 
-			if searchQuery.PublicId == "" && searchQuery.CreatedBy == "" && searchQuery.LocationId == "" {
+			if searchQuery.PublicID == "" && searchQuery.CreatedBy == "" && searchQuery.LocationID == "" {
 				ctx.String(http.StatusBadRequest, "No search parameters specified!")
 				return
 			}
 
-			if searchQuery.PublicId != "" && (searchQuery.CreatedBy != "" || searchQuery.LocationId != "") {
+			if searchQuery.PublicID != "" && (searchQuery.CreatedBy != "" || searchQuery.LocationID != "") {
 				ctx.String(http.StatusBadRequest, "Too many parameters specified!")
 				return
 			}
 
-			if searchQuery.PublicId != "" {
-				query := sq.Select("id").From("receipts").Where(sq.Eq{"receipts.public_id": searchQuery.PublicId})
+			if searchQuery.PublicID != "" {
+				query := sq.Select("id").From("receipts").Where(sq.Eq{"receipts.public_id": searchQuery.PublicID})
 
 				queryString, queryStringArgs, err := query.ToSql()
 				if err != nil {
 					log.Fatalln(err.Error())
 				}
 
-				receipt := ReceiptId{}
+				receipt := ReceiptID{}
 				if err := db.Get(&receipt, queryString, queryStringArgs...); err != nil {
 					log.Fatalln(err.Error())
 				}
 				// .From("items_in_receipt").Join("receipts ON receipts.id = items_in_receipt.receipt_id")
-				itemsQuery := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Where(sq.Eq{"items_in_receipt.receipt_id": receipt.Id})
+				itemsQuery := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Where(sq.Eq{"items_in_receipt.receipt_id": receipt.ID})
 
 				itemsQueryString, itemsQueryStringArgs, err := itemsQuery.ToSql()
 				if err != nil {
@@ -466,8 +466,8 @@ func main() {
 			if searchQuery.CreatedBy != "" {
 				query = query.Where(sq.Eq{"users.public_id": searchQuery.CreatedBy})
 			}
-			if searchQuery.LocationId != "" {
-				query = query.Where(sq.Eq{"locations.public_id": searchQuery.LocationId})
+			if searchQuery.LocationID != "" {
+				query = query.Where(sq.Eq{"locations.public_id": searchQuery.LocationID})
 			}
 
 			queryString, queryStringArgs, err := query.ToSql()
@@ -497,25 +497,25 @@ func main() {
 				return
 			}
 
-			locationIdQuery := sq.Select("id").From("locations").Where(sq.Eq{"public_id": receiptData.LocationPublicId})
-			locationIdQueryString, locationIdQueryStringArgs, err := locationIdQuery.ToSql()
+			locationIDQuery := sq.Select("id").From("locations").Where(sq.Eq{"public_id": receiptData.LocationPublicID})
+			locationIDQueryString, locationIDQueryStringArgs, err := locationIDQuery.ToSql()
 			if err != nil {
 				log.Fatalln(err.Error())
 			}
 
-			location := LocationId{}
-			if err := db.Get(&location, locationIdQueryString, locationIdQueryStringArgs...); err != nil {
+			location := LocationID{}
+			if err := db.Get(&location, locationIDQueryString, locationIDQueryStringArgs...); err != nil {
 				log.Fatalln(err.Error())
 			}
 
-			userIdQuery := sq.Select("id").From("users").Where(sq.Eq{"public_id": receiptData.CreatedByPublicId})
-			userIdQueryString, userIdQueryStringArgs, err := userIdQuery.ToSql()
+			userIDQuery := sq.Select("id").From("users").Where(sq.Eq{"public_id": receiptData.CreatedByPublicID})
+			userIDQueryString, userIDQueryStringArgs, err := userIDQuery.ToSql()
 			if err != nil {
 				log.Fatalln(err.Error())
 			}
 
-			user := UserId{}
-			if err := db.Get(&user, userIdQueryString, userIdQueryStringArgs...); err != nil {
+			user := UserID{}
+			if err := db.Get(&user, userIDQueryString, userIDQueryStringArgs...); err != nil {
 				log.Fatalln(err.Error())
 			}
 
@@ -524,7 +524,7 @@ func main() {
 				log.Fatalln(err.Error())
 			}
 
-			query := sq.Insert("receipts").Columns("public_id", "location_id", "created_by").Values(uuid, location.Id, user.Id)
+			query := sq.Insert("receipts").Columns("public_id", "location_id", "created_by").Values(uuid, location.ID, user.ID)
 
 			queryString, queryStringArgs, err := query.ToSql()
 			if err != nil {
