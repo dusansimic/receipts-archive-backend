@@ -31,6 +31,10 @@ type LocationsDeleteBody struct {
 	PublicId string `json:"id" validate:"required"`
 }
 
+type LocationId struct {
+	Id int `db:"id"`
+}
+
 type Location struct {
 	PublicId string `db:"public_id"`
 	Name string `db:"name"`
@@ -78,7 +82,8 @@ type ReceiptsGetQuery struct {
 }
 
 type ReceiptsPostBody struct {
-	
+	LocationPublicId string `json:"locationId" validate:"required"`
+	CreatedByPublicId string `json:"createdBy" validate:"required"`
 }
 
 type ReceiptId struct {

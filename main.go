@@ -306,7 +306,7 @@ func main() {
 
 			uuid, err := nanoid.Nanoid()
 			if err != nil {
-				log.Fatalln(err)
+				log.Fatalln(err.Error())
 			}
 
 			// fmt.Println(itemData)
@@ -412,7 +412,7 @@ func main() {
 		})
 	}
 
-	receipts := router.Group("/receips")
+	receipts := router.Group("/receipts")
 	{
 		// Get list of receipts (query available)
 		receipts.GET("", func (ctx *gin.Context) {
@@ -433,7 +433,7 @@ func main() {
 			}
 
 			if searchQuery.PublicId != "" {
-				query := sq.Select("id").From("receipts").Where(sq.Eq{"public_id": searchQuery.PublicId})
+				query := sq.Select("id").From("receipts").Where(sq.Eq{"receipts.public_id": searchQuery.PublicId})
 
 				queryString, queryStringArgs, err := query.ToSql()
 				if err != nil {
@@ -445,7 +445,7 @@ func main() {
 					log.Fatalln(err.Error())
 				}
 				// .From("items_in_receipt").Join("receipts ON receipts.id = items_in_receipt.receipt_id")
-				itemsQuery := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").Join("items ON items.id = items_in_receipt.item_id").Where(sq.Eq{"items_in_receipt.receipt_id": receipt.Id})
+				itemsQuery := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Where(sq.Eq{"items_in_receipt.receipt_id": receipt.Id})
 
 				itemsQueryString, itemsQueryStringArgs, err := itemsQuery.ToSql()
 				if err != nil {
@@ -460,11 +460,89 @@ func main() {
 				ctx.JSON(http.StatusOK, items)
 				return
 			}
+
+			query := sq.Select("receipts.public_id, locations.public_id as location_id, users.public_id as created_by, receipts.created_at, receipts.updated_at").From("receipts").Join("locations ON locations.id = receipts.location_id").Join("users ON users.id = receipts.created_by")
+
+			if searchQuery.CreatedBy != "" {
+				query = query.Where(sq.Eq{"users.public_id": searchQuery.CreatedBy})
+			}
+			if searchQuery.LocationId != "" {
+				query = query.Where(sq.Eq{"locations.public_id": searchQuery.LocationId})
+			}
+
+			queryString, queryStringArgs, err := query.ToSql()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+			
+			receipts := []Receipt{}
+			if err := db.Select(&receipts, queryString, queryStringArgs...); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			ctx.JSON(http.StatusOK, receipts)
 		})
 
 		// Add new receipt
 		receipts.POST("", func (ctx *gin.Context) {
-			
+			var receiptData ReceiptsPostBody
+			if err := ctx.ShouldBindJSON(&receiptData); err != nil {
+				ctx.String(http.StatusBadRequest, err.Error())
+				return
+			}
+
+			err := v.Struct(receiptData)
+			if err != nil {
+				ctx.String(http.StatusBadRequest, err.Error())
+				return
+			}
+
+			locationIdQuery := sq.Select("id").From("locations").Where(sq.Eq{"public_id": receiptData.LocationPublicId})
+			locationIdQueryString, locationIdQueryStringArgs, err := locationIdQuery.ToSql()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			location := LocationId{}
+			if err := db.Get(&location, locationIdQueryString, locationIdQueryStringArgs...); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			userIdQuery := sq.Select("id").From("users").Where(sq.Eq{"public_id": receiptData.CreatedByPublicId})
+			userIdQueryString, userIdQueryStringArgs, err := userIdQuery.ToSql()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			user := UserId{}
+			if err := db.Get(&user, userIdQueryString, userIdQueryStringArgs...); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			uuid, err := nanoid.Nanoid()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			query := sq.Insert("receipts").Columns("public_id", "location_id", "created_by").Values(uuid, location.Id, user.Id)
+
+			queryString, queryStringArgs, err := query.ToSql()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			tx, err := db.Begin()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			tx.Commit()
+
+			ctx.Status(http.StatusOK)
 		})
 	}
 
