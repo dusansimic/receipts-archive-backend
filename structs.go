@@ -101,6 +101,17 @@ type ReceiptsPostBody struct {
 	CreatedByPublicID string `json:"createdBy" validate:"required"`
 }
 
+// ReceiptsPutBody : Structure that should be used for getting json from body of a put request for receipts
+type ReceiptsPutBody struct {
+	PublicID string `json:"id" validate:"required"`
+	LocationID string `json:"locationId"`
+}
+
+// ReceiptsDeleteBody : Structure that should be used for getting json data from body of a delete request for items
+type ReceiptsDeleteBody struct {
+	PublicID string `json:"id" validate:"required"`
+}
+
 // ReceiptID : Structure that should be used for getting just the ID from database
 type ReceiptID struct {
 	ID int `db:"id"`

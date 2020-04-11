@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"context"
+	"time"
 
 	// Server related stuff
 	"net/http"
@@ -525,6 +526,94 @@ func main() {
 			}
 
 			query := sq.Insert("receipts").Columns("public_id", "location_id", "created_by").Values(uuid, location.ID, user.ID)
+
+			queryString, queryStringArgs, err := query.ToSql()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			tx, err := db.Begin()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			tx.Commit()
+
+			ctx.Status(http.StatusOK)
+		})
+
+		// Update receipt
+		receipts.PUT("", func (ctx *gin.Context) {
+			var receiptData ReceiptsPutBody
+			if err := ctx.ShouldBindJSON(&receiptData); err != nil {
+				ctx.String(http.StatusBadRequest, err.Error())
+				return
+			}
+
+			err := v.Struct(receiptData)
+			if err != nil {
+				ctx.String(http.StatusBadRequest, err.Error())
+				return
+			}
+
+			query := sq.Update("receipts")
+
+			if receiptData.LocationID != "" {
+				locationQuery := sq.Select("id").From("locations").Where(sq.Eq{"public_id": receiptData.LocationID})
+
+				locationQueryString, locationQueryStringArgs, err := locationQuery.ToSql()
+				if err != nil {
+					log.Fatalln(err.Error())
+				}
+
+				location := LocationID{}
+				if err := db.Get(&location, locationQueryString, locationQueryStringArgs...); err != nil {
+					log.Fatalln(err.Error())
+				}
+
+				query = query.Set("location_id", location.ID)
+			}
+
+			query = query.Set("updated_at", time.Now()).Where(sq.Eq{"public_id": receiptData.PublicID})
+
+			queryString, queryStringArgs, err := query.ToSql()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			tx, err := db.Begin()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			tx.Commit()
+
+			ctx.Status(http.StatusOK)
+		})
+
+		// Delete receipt
+		receipts.DELETE("", func (ctx *gin.Context) {
+			var receiptData ReceiptsDeleteBody
+			if err := ctx.ShouldBindJSON(&receiptData); err != nil {
+				ctx.String(http.StatusBadRequest, err.Error())
+				return
+			}
+
+			err := v.Struct(receiptData)
+			if err != nil {
+				ctx.String(http.StatusBadRequest, err.Error())
+				return
+			}
+
+			query := sq.Delete("receipts").Where(sq.Eq{"public_id": receiptData.PublicID})
 
 			queryString, queryStringArgs, err := query.ToSql()
 			if err != nil {
