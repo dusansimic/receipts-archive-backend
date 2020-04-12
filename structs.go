@@ -90,7 +90,7 @@ type Item struct {
 
 // ReceiptsGetQuery : Structure that should be used for getting query data on get request for receipts
 type ReceiptsGetQuery struct {
-	PublicID string `form:"publicId"`
+	PublicID string `form:"id"`
 	CreatedBy string `form:"createdBy"`
 	LocationID string `form:"locationId"`
 }

@@ -434,27 +434,15 @@ func main() {
 			}
 
 			if searchQuery.PublicID != "" {
-				query := sq.Select("id").From("receipts").Where(sq.Eq{"receipts.public_id": searchQuery.PublicID})
+				query := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Join("receipts ON receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"receipts.public_id": searchQuery.PublicID})
 
 				queryString, queryStringArgs, err := query.ToSql()
 				if err != nil {
 					log.Fatalln(err.Error())
 				}
 
-				receipt := ReceiptID{}
-				if err := db.Get(&receipt, queryString, queryStringArgs...); err != nil {
-					log.Fatalln(err.Error())
-				}
-				// .From("items_in_receipt").Join("receipts ON receipts.id = items_in_receipt.receipt_id")
-				itemsQuery := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Where(sq.Eq{"items_in_receipt.receipt_id": receipt.ID})
-
-				itemsQueryString, itemsQueryStringArgs, err := itemsQuery.ToSql()
-				if err != nil {
-					log.Fatalln(err.Error())
-				}
-
-				items := []Item{}
-				if err := db.Select(&items, itemsQueryString, itemsQueryStringArgs...); err != nil {
+				items := []ItemInReceipt{}
+				if err := db.Select(&items, queryString, queryStringArgs...); err != nil {
 					log.Fatalln(err.Error())
 				}
 
