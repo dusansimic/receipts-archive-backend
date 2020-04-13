@@ -9,6 +9,7 @@ import (
 	// Server related stuff
 	"net/http"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions/cookie"
 
 	// Auth stuff
@@ -62,6 +63,7 @@ func userCheck(user goth.User, db *sqlx.DB) {
 
 func main() {
 	router := gin.Default()
+	router.Use(cors.Default())
 
 	// db, err := sqlx.Connect("mysql", "root:rootpass@/receipts?parseTime=true")
 	db, err := sqlx.Connect("sqlite3", "./receipts.db")
@@ -280,6 +282,29 @@ func main() {
 			ctx.JSON(http.StatusOK, items)
 		})
 
+		// Get list of items from a specific receipt
+		items.GET("/inreceipt/:id", func (ctx *gin.Context) {
+			receiptPublicID := ctx.Param("id")
+			if receiptPublicID == "" {
+				ctx.String(http.StatusBadRequest, "Receipt id must be specified!")
+				return
+			}
+
+			query := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Join("receipts ON receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"receipts.public_id": receiptPublicID})
+
+			queryString, queryStringArgs, err := query.ToSql()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			items := []ItemInReceipt{}
+			if err := db.Select(&items, queryString, queryStringArgs...); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			ctx.JSON(http.StatusOK, items)
+		})
+
 		// Add new item
 		items.POST("", func (ctx *gin.Context) {
 			var itemData ItemsPostBody
@@ -313,6 +338,70 @@ func main() {
 			// fmt.Println(itemData)
 
 			query := sq.Insert("items").Columns("public_id", "created_by", "name", "price", "unit").Values(uuid, user.ID, itemData.Name, itemData.Price, itemData.Unit)
+
+			queryString, queryStringArgs, err := query.ToSql()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			tx, err := db.Begin()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			tx.Commit()
+
+			ctx.Status(http.StatusOK)
+		})
+
+		// Add item to receipts
+		items.POST("/toreceipt", func (ctx *gin.Context) {
+			var itemData ItemsPostToReceiptBody
+			if err := ctx.ShouldBindJSON(&itemData); err != nil {
+				ctx.String(http.StatusBadRequest, err.Error())
+				return
+			}
+
+			err := v.Struct(itemData)
+			if err != nil {
+				ctx.String(http.StatusBadRequest, err.Error())
+				return
+			}
+
+			receiptIDQuery := sq.Select("id").From("receipts").Where(sq.Eq{"public_id": itemData.ReceiptID})
+
+			receiptIDQueryString, receiptIDQueryStringArgs, err := receiptIDQuery.ToSql()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			receipt := ReceiptID{}
+			if err := db.Get(&receipt, receiptIDQueryString, receiptIDQueryStringArgs...); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			itemIDQuery := sq.Select("id").From("items").Where(sq.Eq{"public_id": itemData.ItemID})
+
+			itemIDQueryString, itemIDQueryStringArgs, err := itemIDQuery.ToSql()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			item := ItemID{}
+			if err := db.Get(&item, itemIDQueryString, itemIDQueryStringArgs...); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			uuid, err := nanoid.Nanoid()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			query := sq.Insert("items_in_receipt").Columns("public_id", "receipt_id", "item_id", "amount").Values(uuid, receipt.ID, item.ID, itemData.Amount)
 
 			queryString, queryStringArgs, err := query.ToSql()
 			if err != nil {
@@ -433,40 +522,33 @@ func main() {
 				return
 			}
 
+			query := sq.Select("receipts.public_id, locations.public_id AS location_id, users.public_id AS created_by, locations.name AS name, locations.address AS address, receipts.created_at, receipts.updated_at, SUM(items.price * items_in_receipt.amount) AS total_price").From("receipts").Join("locations ON locations.id = receipts.location_id").Join("users ON users.id = receipts.created_by").Join("items_in_receipt ON items_in_receipt.receipt_id = receipts.id").Join("items ON items.id = items_in_receipt.item_id")
+
 			if searchQuery.PublicID != "" {
-				query := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Join("receipts ON receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"receipts.public_id": searchQuery.PublicID})
-
-				queryString, queryStringArgs, err := query.ToSql()
-				if err != nil {
-					log.Fatalln(err.Error())
+				query = query.Where(sq.Eq{"receipts.public_id": searchQuery.PublicID})
+			} else {
+				if searchQuery.CreatedBy != "" {
+					query = query.Where(sq.Eq{"users.public_id": searchQuery.CreatedBy})
 				}
-
-				items := []ItemInReceipt{}
-				if err := db.Select(&items, queryString, queryStringArgs...); err != nil {
-					log.Fatalln(err.Error())
+				if searchQuery.LocationID != "" {
+					query = query.Where(sq.Eq{"locations.public_id": searchQuery.LocationID})
 				}
-
-				ctx.JSON(http.StatusOK, items)
-				return
-			}
-
-			query := sq.Select("receipts.public_id, locations.public_id as location_id, users.public_id as created_by, receipts.created_at, receipts.updated_at").From("receipts").Join("locations ON locations.id = receipts.location_id").Join("users ON users.id = receipts.created_by")
-
-			if searchQuery.CreatedBy != "" {
-				query = query.Where(sq.Eq{"users.public_id": searchQuery.CreatedBy})
-			}
-			if searchQuery.LocationID != "" {
-				query = query.Where(sq.Eq{"locations.public_id": searchQuery.LocationID})
 			}
 
 			queryString, queryStringArgs, err := query.ToSql()
 			if err != nil {
 				log.Fatalln(err.Error())
 			}
-			
-			receipts := []Receipt{}
-			if err := db.Select(&receipts, queryString, queryStringArgs...); err != nil {
-				log.Fatalln(err.Error())
+
+			receipts := []ReceiptWithData{}
+			rows, err := db.Queryx(queryString, queryStringArgs...)
+			for rows.Next() {
+				receipt := ReceiptWithData{}
+				err := rows.Scan(&receipt.PublicID, &receipt.Location.PublicID, &receipt.CreatedBy, &receipt.Location.Name, &receipt.Location.Address, &receipt.CreatedAt, &receipt.UpdatedAt, &receipt.TotalPrice)
+				if err != nil {
+					log.Fatalln(err.Error())
+				}
+				receipts = append(receipts, receipt)
 			}
 
 			ctx.JSON(http.StatusOK, receipts)
@@ -623,5 +705,5 @@ func main() {
 		})
 	}
 
-	router.Run(":3000")
+	router.Run(":3001")
 }

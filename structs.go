@@ -44,10 +44,10 @@ type LocationID struct {
 
 // Location : Structure that should be used for getting location information from database
 type Location struct {
-	PublicID string `db:"public_id" json:"publicId"`
+	PublicID string `db:"public_id" json:"id"`
 	Name string `db:"name" json:"name"`
 	Address string `db:"address" json:"address"`
-	CreatedAt time.Time `db:"created_at" json:"createAt"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
@@ -65,6 +65,13 @@ type ItemsPostBody struct {
 	Unit string `json:"unit" validate:"required"`
 }
 
+// ItemsPostToReceiptBody : Structure that should be used for getting json from body of a post request for adding item to a receipt
+type ItemsPostToReceiptBody struct {
+	ReceiptID string `json:"receiptId" validate:"required"`
+	ItemID string `json:"itemId" validate:"required"`
+	Amount float32 `json:"amount" validate:"required"`
+}
+
 // ItemsPutBody : Structure that should be used for getting json from body of a put request for items
 type ItemsPutBody struct {
 	PublicID string `json:"id" validate:"required"`
@@ -78,14 +85,19 @@ type ItemsDeleteBody struct {
 	PublicID string `json:"id" validate:"required"`
 }
 
+// ItemID : Structure that should be used for getting just the ID from database
+type ItemID struct {
+	ID int `db:"id"`
+}
+
 // Item : Structure that should be used for getting item information from database
 type Item struct {
-	PublicID string `db:"public_id"`
-	Name string `db:"name"`
-	Price float32 `db:"price"`
-	Unit string `db:"unit"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	PublicID string `db:"public_id" json:"id"`
+	Name string `db:"name" json:"name"`
+	Price float32 `db:"price" json:"price"`
+	Unit string `db:"unit" json:"unit"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 // ReceiptsGetQuery : Structure that should be used for getting query data on get request for receipts
@@ -119,19 +131,29 @@ type ReceiptID struct {
 
 // Receipt : Structure that should be used for getting receipt information from database
 type Receipt struct {
-	PublicID string `db:"public_id"`
-	LocationID string `db:"location_id"`
-	CreatedBy string `db:"created_by"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	PublicID string `db:"public_id" json:"id"`
+	LocationID string `db:"location_id" json:"locationId"`
+	CreatedBy string `db:"created_by" json:"createdBy"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// ReceiptWithData : Structure that should be used for getting receipt information including names, addresses, and everything else from receipts location from database
+type ReceiptWithData struct {
+	PublicID string `json:"id"`
+	CreatedBy string `json:"createdBy"`
+	Location Location `json:"location"`
+	TotalPrice float32 `json:"totalPrice"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // ItemInReceipt : Structure that should be used for getting item information of a specific receipt from database
 type ItemInReceipt struct {
-	PublicID string `db:"public_id"`
-	ItemPublicID string `db:"item_public_id"`
-	Name string `db:"item_name"`
-	Price float32 `db:"item_price"`
-	Unit string `db:"item_unit"`
-	Amount float32 `db:"amount"`
+	PublicID string `db:"public_id" json:"id"`
+	ItemPublicID string `db:"item_public_id" json:"itemId"`
+	Name string `db:"item_name" json:"name"`
+	Price float32 `db:"item_price" json:"price"`
+	Unit string `db:"item_unit" json:"unit"`
+	Amount float32 `db:"amount" json:"amount"`
 }
