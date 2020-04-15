@@ -359,7 +359,7 @@ func main() {
 		})
 
 		// Add item to receipts
-		items.POST("/toreceipt", func (ctx *gin.Context) {
+		items.POST("/inreceipt", func (ctx *gin.Context) {
 			var itemData ItemsPostToReceiptBody
 			if err := ctx.ShouldBindJSON(&itemData); err != nil {
 				ctx.String(http.StatusBadRequest, err.Error())
@@ -446,6 +446,40 @@ func main() {
 			}
 			if itemData.Unit != "" {
 				query = query.Set("unit", itemData.Unit)
+			}
+
+			query = query.Set("updated_at", time.Now())
+
+			queryString, queryStringArgs, err := query.Where(sq.Eq{"public_id": itemData.PublicID}).ToSql()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			tx, err := db.Begin()
+			if err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			tx.Commit()
+
+			ctx.Status(http.StatusOK)
+		})
+
+		// Update item from specific receipt
+		items.PUT("/inreceipt", func (ctx *gin.Context) {
+			var itemData ItemsInReceiptPutBody
+			if err := ctx.ShouldBindJSON(&itemData); err != nil {
+				ctx.String(http.StatusBadRequest, err.Error())
+			}
+
+			query := sq.Update("items_in_receipt")
+
+			if itemData.Amount != 0.0 {
+				query = query.Set("amount", itemData.Amount)
 			}
 
 			queryString, queryStringArgs, err := query.Where(sq.Eq{"public_id": itemData.PublicID}).ToSql()

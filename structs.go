@@ -80,6 +80,12 @@ type ItemsPutBody struct {
 	Unit string `json:"unit"`
 }
 
+// ItemsInReceiptPutBody : Structure that should be used for getting json from body of a put request for items form a specific receipt
+type ItemsInReceiptPutBody struct {
+	PublicID string `json:"id" validate:"required"`
+	Amount float32 `json:"amount"`
+}
+
 // ItemsDeleteBody : Structure that should be used for getting json data from body of a delete request for items
 type ItemsDeleteBody struct {
 	PublicID string `json:"id" validate:"required"`
