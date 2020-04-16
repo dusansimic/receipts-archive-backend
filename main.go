@@ -66,7 +66,7 @@ func main() {
 	router.Use(cors.Default())
 
 	// db, err := sqlx.Connect("mysql", "root:rootpass@/receipts?parseTime=true")
-	db, err := sqlx.Connect("sqlite3", "./receipts.db")
+	db, err := generateDatabase()
 	if err != nil {
 		fmt.Println("Failed to connect to the database!")
 		log.Fatalln(err.Error())
