@@ -1,9 +1,23 @@
 package main
 
-import "time"
+import (
+	"database/sql"
+	"time"
 
-// UserID : Structure that should be used for getting just the ID from database
-type UserID struct {
+	"github.com/gbrlsnchs/jwt/v3"
+)
+
+// JWTPayload : Structure that is only used for JWT Payload
+type JWTPayload struct {
+	jwt.Payload
+	UserID string `json:"id"`
+}
+
+// ContextKey is a custom type string for context key
+type ContextKey string
+
+// StructID : Structure for getting id
+type StructID struct {
 	ID int `db:"id"`
 }
 
@@ -22,7 +36,7 @@ type LocationsGetQuery struct {
 type LocationsPostBody struct {
 	Name string `json:"name" validate:"required"`
 	Address string `json:"address" validate:"required"`
-	CreatedBy string `json:"userId" validate:"required"`
+	// CreatedBy string `json:"userId" validate:"required"`
 }
 
 // LocationsPutBody : Structure that should be used for getting json from body of a put request for locations
@@ -37,11 +51,6 @@ type LocationsDeleteBody struct {
 	PublicID string `json:"id" validate:"required"`
 }
 
-// LocationID : Structure that should be used for getting just the ID from database
-type LocationID struct {
-	ID int `db:"id"`
-}
-
 // Location : Structure that should be used for getting location information from database
 type Location struct {
 	PublicID string `db:"public_id" json:"id"`
@@ -53,13 +62,13 @@ type Location struct {
 
 // ItemsGetQuery : Structure that should be used for getting query data on get request for items
 type ItemsGetQuery struct {
-	CreatedBy string `form:"createdBy"`
+	// CreatedBy string `form:"createdBy"`
 	Name string `form:"name"`
 }
 
 // ItemsPostBody : Structure that should be used for getting json from body of a post request for items
 type ItemsPostBody struct {
-	CreatedBy string `json:"createdBy" validate:"required"`
+	// CreatedBy string `json:"createdBy" validate:"required"`
 	Name string `json:"name" validate:"required"`
 	Price float32 `json:"price" validate:"required"`
 	Unit string `json:"unit" validate:"required"`
@@ -91,9 +100,10 @@ type ItemsDeleteBody struct {
 	PublicID string `json:"id" validate:"required"`
 }
 
-// ItemID : Structure that should be used for getting just the ID from database
-type ItemID struct {
-	ID int `db:"id"`
+// ItemsInReceiptDeleteBody : Structure that should be used for getting json data from body of a delete request for items in a specific receipt
+type ItemsInReceiptDeleteBody struct {
+	ItemID string `json:"itemId" validate:"required"`
+	ReceiptID string `json:"receiptId"`
 }
 
 // Item : Structure that should be used for getting item information from database
@@ -109,14 +119,13 @@ type Item struct {
 // ReceiptsGetQuery : Structure that should be used for getting query data on get request for receipts
 type ReceiptsGetQuery struct {
 	PublicID string `form:"id"`
-	CreatedBy string `form:"createdBy"`
 	LocationID string `form:"locationId"`
 }
 
 // ReceiptsPostBody : Structure that should be used for getting json from body of a post request for receipts
 type ReceiptsPostBody struct {
 	LocationPublicID string `json:"locationId" validate:"required"`
-	CreatedByPublicID string `json:"createdBy" validate:"required"`
+	CreatedAt string `json:"createdAt"`
 }
 
 // ReceiptsPutBody : Structure that should be used for getting json from body of a put request for receipts
@@ -128,11 +137,6 @@ type ReceiptsPutBody struct {
 // ReceiptsDeleteBody : Structure that should be used for getting json data from body of a delete request for items
 type ReceiptsDeleteBody struct {
 	PublicID string `json:"id" validate:"required"`
-}
-
-// ReceiptID : Structure that should be used for getting just the ID from database
-type ReceiptID struct {
-	ID int `db:"id"`
 }
 
 // Receipt : Structure that should be used for getting receipt information from database
@@ -149,7 +153,7 @@ type ReceiptWithData struct {
 	PublicID string `json:"id"`
 	CreatedBy string `json:"createdBy"`
 	Location Location `json:"location"`
-	TotalPrice float32 `json:"totalPrice"`
+	TotalPrice sql.NullFloat64 `json:"totalPrice"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
