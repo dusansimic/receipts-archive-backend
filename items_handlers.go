@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +12,43 @@ import (
 	"github.com/jkomyno/nanoid"
 	"github.com/jmoiron/sqlx"
 )
+
+// ItemsGetQuery : Structure that should be used for getting query data on get request for items
+type ItemsGetQuery struct {
+	// CreatedBy string `form:"createdBy"`
+	Name string `form:"name"`
+}
+
+// ItemsPostBody : Structure that should be used for getting json from body of a post request for items
+type ItemsPostBody struct {
+	// CreatedBy string `json:"createdBy" validate:"required"`
+	Name string `json:"name" validate:"required"`
+	Price float32 `json:"price" validate:"required"`
+	Unit string `json:"unit" validate:"required"`
+}
+
+// ItemsPutBody : Structure that should be used for getting json from body of a put request for items
+type ItemsPutBody struct {
+	PublicID string `json:"id" validate:"required"`
+	Name string `json:"name"`
+	Price float32 `json:"price"`
+	Unit string `json:"unit"`
+}
+
+// ItemsDeleteBody : Structure that should be used for getting json data from body of a delete request for items
+type ItemsDeleteBody struct {
+	PublicID string `json:"id" validate:"required"`
+}
+
+// Item : Structure that should be used for getting item information from database
+type Item struct {
+	PublicID string `db:"public_id" json:"id"`
+	Name string `db:"name" json:"name"`
+	Price float32 `db:"price" json:"price"`
+	Unit string `db:"unit" json:"unit"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
 
 // GetItemsHandler is a Gin handler function for getting items.
 func GetItemsHandler(db *sqlx.DB) gin.HandlerFunc {
@@ -54,42 +90,6 @@ func GetItemsHandler(db *sqlx.DB) gin.HandlerFunc {
 	}
 }
 
-// GetItemsInReceiptHandler is a Gin handler function for getting items from
-// a specific receipt.
-func GetItemsInReceiptHandler(db *sqlx.DB) gin.HandlerFunc {
-	return func (ctx *gin.Context) {
-		createdBy, createdByExists := GetUserID(ctx)
-		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
-			return
-		}
-
-		receiptPublicID := ctx.Param("id")
-		if receiptPublicID == "" {
-			ctx.String(http.StatusBadRequest, "Receipt id must be specified!")
-			return
-		}
-
-		user := PublicToPrivateUserID(db, createdBy)
-
-		query := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Join("receipts ON receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"receipts.public_id": receiptPublicID, "receipts.created_by": user.ID})
-
-		queryString, queryStringArgs, err := query.ToSql()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		items := []ItemInReceipt{}
-		if err := db.Select(&items, queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		ctx.JSON(http.StatusOK, items)
-	}
-}
-
 // PostItemsHandler is a Gin handler function for adding new items.
 func PostItemsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
@@ -120,92 +120,6 @@ func PostItemsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 		}
 
 		query := sq.Insert("items").Columns("public_id", "created_by", "name", "price", "unit").Values(uuid, user.ID, itemData.Name, itemData.Price, itemData.Unit)
-
-		queryString, queryStringArgs, err := query.ToSql()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		tx, err := db.Begin()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		ctx.Status(http.StatusOK)
-	}
-}
-
-// PostItemsInReceiptHandler is a Gin handler function for adding new items to
-// a specific receipt.
-func PostItemsInReceiptHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
-	return func (ctx *gin.Context) {
-		createdBy, createdByExists := GetUserID(ctx)
-		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
-			return
-		}
-
-		var itemData ItemsPostToReceiptBody
-		if err := ctx.ShouldBindJSON(&itemData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
-			return
-		}
-
-		err := v.Struct(itemData)
-		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
-			return
-		}
-
-		user := PublicToPrivateUserID(db, createdBy)
-
-		receiptIDQuery := sq.Select("id").From("receipts").Where(sq.Eq{"public_id": itemData.ReceiptID, "created_by": user.ID})
-
-		receiptIDQueryString, receiptIDQueryStringArgs, err := receiptIDQuery.ToSql()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		receipt := StructID{}
-		if err := db.Get(&receipt, receiptIDQueryString, receiptIDQueryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		itemIDQuery := sq.Select("id").From("items").Where(sq.Eq{"public_id": itemData.ItemID, "created_by": user.ID})
-
-		itemIDQueryString, itemIDQueryStringArgs, err := itemIDQuery.ToSql()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		item := StructID{}
-		if err := db.Get(&item, itemIDQueryString, itemIDQueryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		uuid, err := nanoid.Nanoid()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		query := sq.Insert("items_in_receipt").Columns("public_id", "receipt_id", "item_id", "amount").Values(uuid, receipt.ID, item.ID, itemData.Amount)
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
@@ -296,65 +210,6 @@ func PutItemsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	}
 }
 
-// PutItemsInReceiptHandler is a Gin handler function for updating items in a
-// specific receipt.
-func PutItemsInReceiptHandler(db *sqlx.DB) gin.HandlerFunc {
-	return func (ctx *gin.Context) {
-		createdBy, createdByExists := GetUserID(ctx)
-		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
-			return
-		}
-
-		var itemData ItemsInReceiptPutBody
-		if err := ctx.ShouldBindJSON(&itemData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
-			return
-		}
-
-		user := PublicToPrivateUserID(db, createdBy)
-
-		userOwnsQuery := sq.Select("id").From("items_in_receipt").Join("receipts on receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"items_in_receipt.public_id": itemData.PublicID, "receipt.created_by": user.ID})
-
-		userOwnsQueryString, userOwnsQueryStringArgs, err := userOwnsQuery.ToSql()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if err := db.Get(nil, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
-			ctx.String(http.StatusUnauthorized, "Not authrized to edit specified item from receipt.")
-			return
-		}
-
-		query := sq.Update("items_in_receipt")
-
-		if itemData.Amount != 0.0 {
-			query = query.Set("amount", itemData.Amount)
-		}
-
-		queryString, queryStringArgs, err := query.Where(sq.Eq{"public_id": itemData.PublicID}).ToSql()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		tx, err := db.Begin()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			log.Fatalln(err.Error())
-		}
-
-		tx.Commit()
-
-		ctx.Status(http.StatusOK)
-	}
-}
-
 // DeleteItemsHandler is a Gin handler function for deleting items.
 func DeleteItemsHandler (db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
@@ -396,86 +251,6 @@ func DeleteItemsHandler (db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 		}
 
 		tx.Commit()
-
-		ctx.Status(http.StatusOK)
-	}
-}
-
-// DeleteItemsInReceiptHandler is a Gin handler function for deleting items from
-// a specific receipt.
-func DeleteItemsInReceiptHandler (db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
-	return func (ctx *gin.Context) {
-		createdBy, createdByExists := GetUserID(ctx)
-		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
-			return
-		}
-
-		var itemData ItemsInReceiptDeleteBody
-		if err := ctx.ShouldBindJSON(&itemData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
-			return
-		}
-
-		err := v.Struct(itemData)
-		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
-			return
-		}
-
-		user := PublicToPrivateUserID(db, createdBy)
-
-		userOwnsQuery := sq.Select("items_in_receipt.id").From("items_in_receipt").Join("receipts ON receipts.id = items_in_receipt.receipt_id")
-
-		if itemData.ReceiptID == "" {
-			userOwnsQuery = userOwnsQuery.Where(sq.Eq{"items_in_receipt.public_id": itemData.ItemID, "receipts.created_by": user.ID})
-		} else {
-			userOwnsQuery = userOwnsQuery.Where(sq.Eq{"items_in_receipt.item_id": itemData.ItemID, "items_in_receipt.receipt_id": itemData.ReceiptID, "receipts.created_by": user.ID})
-		}
-
-		userOwnsQueryString, userOwnsQueryStringArgs, err := userOwnsQuery.ToSql()
-
-		var item StructID
-		if err := db.Get(&item, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
-			switch err {
-			case sql.ErrNoRows:
-				ctx.String(http.StatusUnauthorized, "Not authrized to delete specified item from receipt.")
-				break
-			default:
-				ctx.String(http.StatusInternalServerError, err.Error())
-			}
-			return
-		}
-
-		query := sq.Delete("items_in_receipt")
-
-		if itemData.ReceiptID == "" {
-			query = query.Where(sq.Eq{"public_id": itemData.ItemID})
-		} else {
-			query = query.Where(sq.Eq{"item_id": itemData.ItemID, "receipt_id": itemData.ReceiptID})
-		}
-
-		queryString, queryStringArgs, err := query.ToSql()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		tx, err := db.Begin()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
 
 		ctx.Status(http.StatusOK)
 	}

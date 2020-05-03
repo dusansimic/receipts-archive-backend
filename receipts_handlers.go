@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"net/http"
 	"time"
 
@@ -10,6 +11,48 @@ import (
 	"github.com/jkomyno/nanoid"
 	"github.com/jmoiron/sqlx"
 )
+
+// ReceiptsGetQuery : Structure that should be used for getting query data on get request for receipts
+type ReceiptsGetQuery struct {
+	PublicID string `form:"id"`
+	LocationID string `form:"locationId"`
+}
+
+// ReceiptsPostBody : Structure that should be used for getting json from body of a post request for receipts
+type ReceiptsPostBody struct {
+	LocationPublicID string `json:"id" validate:"required"`
+	CreatedAt string `json:"createdAt"`
+}
+
+// ReceiptsPutBody : Structure that should be used for getting json from body of a put request for receipts
+type ReceiptsPutBody struct {
+	PublicID string `json:"id" validate:"required"`
+	LocationID string `json:"locationId"`
+}
+
+// ReceiptsDeleteBody : Structure that should be used for getting json data from body of a delete request for items
+type ReceiptsDeleteBody struct {
+	PublicID string `json:"id" validate:"required"`
+}
+
+// Receipt : Structure that should be used for getting receipt information from database
+type Receipt struct {
+	PublicID string `db:"public_id" json:"id"`
+	LocationID string `db:"location_id" json:"locationId"`
+	CreatedBy string `db:"created_by" json:"createdBy"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// ReceiptWithData : Structure that should be used for getting receipt information including names, addresses, and everything else from receipts location from database
+type ReceiptWithData struct {
+	PublicID string `json:"id"`
+	CreatedBy string `json:"createdBy"`
+	Location Location `json:"location"`
+	TotalPrice sql.NullFloat64 `json:"totalPrice"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
 
 func GetReceiptsHandler(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {

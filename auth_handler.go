@@ -13,6 +13,12 @@ import (
 	"github.com/markbates/goth/gothic"
 )
 
+// User : Structure that should be used for getting user information from database
+type User struct {
+	PublicID string `db:"public_id"`
+	RealName string `db:"read_name"`
+}
+
 // UserCheck checks if there is a specified user in the database. If there is,
 // does nothing. If there is not, inserts the data in database.
 func UserCheck(user goth.User, db *sqlx.DB) {
@@ -45,7 +51,7 @@ func UserCheck(user goth.User, db *sqlx.DB) {
 
 func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
-		tmpContext := context.WithValue(ctx.Request.Context(), ContextKey("provider"), "google")
+		tmpContext := context.WithValue(ctx.Request.Context(), "provider", "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
 		user, err := gothic.CompleteUserAuth(ctx.Writer, newRequestContext)
 		if err != nil {
@@ -61,7 +67,7 @@ func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
 
 func AuthCallbackHandler(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
-		tmpContext := context.WithValue(ctx.Request.Context(), ContextKey("provider"), "google")
+		tmpContext := context.WithValue(ctx.Request.Context(), "provider", "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
 		user, err := gothic.CompleteUserAuth(ctx.Writer, newRequestContext)
 		if err != nil {

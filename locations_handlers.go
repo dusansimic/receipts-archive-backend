@@ -14,6 +14,38 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// LocationsGetQuery : Structure that should be used for getting query data on get request for locations
+type LocationsGetQuery struct {
+	Name string `form:"name"`
+}
+
+// LocationsPostBody : Structure that should be used for getting json from body of a post request for locations
+type LocationsPostBody struct {
+	Name string `json:"name" validate:"required"`
+	Address string `json:"address" validate:"required"`
+}
+
+// LocationsPutBody : Structure that should be used for getting json from body of a put request for locations
+type LocationsPutBody struct {
+	PublicID string `json:"id" validate:"required"`
+	Name string `json:"name"`
+	Address string `json:"address"`
+}
+
+// LocationsDeleteBody : Structure that should be used for getting json data from body of a delete request for locations
+type LocationsDeleteBody struct {
+	PublicID string `json:"id" validate:"required"`
+}
+
+// Location : Structure that should be used for getting location information from database
+type Location struct {
+	PublicID string `db:"public_id" json:"id"`
+	Name string `db:"name" json:"name"`
+	Address string `db:"address" json:"address"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
 // GetLocationHandler is a Gin handler function for getting locations.
 func GetLocationHandler(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
@@ -215,7 +247,8 @@ func DeleteLocationHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		if err := db.Get(nil, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
+		var location StructID
+		if err := db.Get(&location, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
 			ctx.String(http.StatusUnauthorized, "Not authrized to delete specified location.")
 			return
 		}
