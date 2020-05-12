@@ -181,7 +181,7 @@ func PutItemsInReceiptHandler(db *sqlx.DB) gin.HandlerFunc {
 
 		user := PublicToPrivateUserID(db, createdBy)
 
-		userOwnsQuery := sq.Select("id").From("items_in_receipt").Join("receipts on receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"items_in_receipt.public_id": itemData.PublicID, "receipt.created_by": user.ID})
+		userOwnsQuery := sq.Select("items_in_receipt.id").From("items_in_receipt").Join("receipts on receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"items_in_receipt.public_id": itemData.PublicID, "receipts.created_by": user.ID})
 
 		userOwnsQueryString, userOwnsQueryStringArgs, err := userOwnsQuery.ToSql()
 		if err != nil {
@@ -189,7 +189,8 @@ func PutItemsInReceiptHandler(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		if err := db.Get(nil, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
+		item := StructID{}
+		if err := db.Get(&item, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
 			ctx.String(http.StatusUnauthorized, "Not authrized to edit specified item from receipt.")
 			return
 		}

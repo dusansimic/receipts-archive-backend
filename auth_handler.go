@@ -16,7 +16,7 @@ import (
 // User : Structure that should be used for getting user information from database
 type User struct {
 	PublicID string `db:"public_id"`
-	RealName string `db:"read_name"`
+	RealName string `db:"real_name"`
 }
 
 // UserCheck checks if there is a specified user in the database. If there is,
