@@ -67,9 +67,7 @@ func GetItemsHandler(db *sqlx.DB) gin.HandlerFunc {
 
 		query := sq.Select("items.public_id, name, price, unit, created_at, updated_at").From("items")
 
-		if createdBy != "" {
-			query = query.Join("users ON users.id = items.created_by").Where(sq.Eq{"users.public_id": createdBy})
-		}
+		query = query.Join("users ON users.id = items.created_by").Where(sq.Eq{"users.public_id": createdBy})
 
 		if searchQuery.Name != "" {
 			query = query.Where("items.name LIKE ?", fmt.Sprint("%", searchQuery.Name, "%"))

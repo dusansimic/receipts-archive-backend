@@ -12,7 +12,8 @@ func generateDatabase() (*sqlx.DB, error) {
 	create table users (
 		id integer primary key autoincrement unique,
 		public_id text not null unique,
-		real_name text not null
+		email text not null unique,
+		password_hash text not null
 	);`
 	locationsTableSchema := `
 	create table locations (
