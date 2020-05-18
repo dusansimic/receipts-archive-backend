@@ -76,21 +76,22 @@ func main() {
 		return
 	}
 
+	// Setup OAuth provider (Google)
 	gothic.Store = cookie.NewStore([]byte(os.Getenv("COOKIE_SECRET")))
 	goth.UseProviders(google.New(os.Getenv("GOOGLE_OAUTH_CLIENT_KEY"), os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"), os.Getenv("GOOGLE_OAUTH_CALLBACK_URL")))
 
+	// Request data validator
 	v := validator.New()
 
 	auth := router.Group("/auth")
 	{
-		// Create a session
-		auth.POST("/login", LoginHandler(db))
+		// Google auth handlers
+		// They also create session ids for user
+		auth.GET("", AuthHandler(db))
+		auth.GET("/callback", AuthCallbackHandler(db))
 
-		// Delete a session
+		// Delete a session (logout)
 		auth.GET("/logout", AuthRequired(db), LogoutHandler(db))
-
-		// Create a user
-		auth.POST("/register", RegisterHandler(db, v))
 	}
 
 	locations := router.Group("/locations")

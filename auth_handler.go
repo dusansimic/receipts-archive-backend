@@ -1,16 +1,18 @@
 package main
 
 import (
-	"crypto/sha512"
-	"encoding/hex"
+	"context"
+	"log"
 	"net/http"
+	"os"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator"
 	"github.com/jkomyno/nanoid"
 	"github.com/jmoiron/sqlx"
+	"github.com/markbates/goth"
+	"github.com/markbates/goth/gothic"
 )
 
 // User : Structure that should be used for getting user information from database
@@ -24,8 +26,7 @@ type Credentials struct {
 	Password string `json:"password" validate:"required"`
 }
 
-type StructExtendedID struct {
-	*StructID
+type StructPublicID struct {
 	PublicID string `db:"public_id"`
 }
 
@@ -59,7 +60,7 @@ func AuthRequired(db *sqlx.DB) gin.HandlerFunc {
 }
 
 // CreateSessionID creates a session and returns the id for the user.
-func CreateSessionID(ctx *gin.Context, user StructExtendedID) error {
+func CreateSessionID(ctx *gin.Context, user StructPublicID) error {
 	session := sessions.Default(ctx)
 
 	uuid, err := nanoid.Nanoid()
@@ -76,41 +77,80 @@ func CreateSessionID(ctx *gin.Context, user StructExtendedID) error {
 	return nil
 }
 
-func LoginHandler(db *sqlx.DB) gin.HandlerFunc {
-	return func (ctx *gin.Context) {
-		var authData Credentials
-		if err := ctx.ShouldBindJSON(&authData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
-			return
-		}
+// UserCheck checks if there is a specified user in the database. If there is,
+// does nothing. If there is not, inserts the data in database.
+func UserCheck(user goth.User, db *sqlx.DB) StructPublicID {
+	query := sq.Select("public_id").From("users").Where(sq.Eq{"public_id": user.UserID})
+	queryString, queryStringArgs, err := query.ToSql()
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
 
-		hasher := sha512.New()
-		hasher.Write([]byte(authData.Password))
-		passwordHash := hex.EncodeToString(hasher.Sum(nil))
-
-		query := sq.Select("id", "public_id").From("users").Where(sq.Eq{
-			"email": authData.Email,
-			"password_hash": passwordHash,
-		})
-
-		queryString, queryStringArgs, err := query.ToSql()
+	userID := StructPublicID{}
+	if err := db.Get(&userID, queryString, queryStringArgs...); err != nil {
+		insertQuery := sq.Insert("users").Columns("public_id", "real_name").Values(user.UserID, user.Email)
+		insertQueryString, insertArgs, err := insertQuery.ToSql()
 		if err != nil {
+			log.Fatalln(err.Error())
+		}
+
+		tx, err := db.Begin()
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
+
+		if _, err := tx.Exec(insertQueryString, insertArgs...); err != nil {
+			log.Fatalln(err.Error())
+		}
+
+		if err := tx.Commit(); err != nil {
+			log.Fatalln(err.Error())
+		}
+
+		userID.PublicID = user.UserID
+	}
+
+	return userID
+}
+
+func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
+	return func (ctx *gin.Context) {
+		tmpContext := context.WithValue(ctx.Request.Context(), "provider", "google")
+		newRequestContext := ctx.Request.WithContext(tmpContext)
+		user, err := gothic.CompleteUserAuth(ctx.Writer, newRequestContext)
+		if err != nil {
+			gothic.BeginAuthHandler(ctx.Writer, newRequestContext)
+			return
+		}
+
+		userID := UserCheck(user, db)
+
+		if err := CreateSessionID(ctx, userID); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		var user StructExtendedID
-		if err := db.Get(&user, queryString, queryStringArgs...); err != nil {
+		ctx.JSON(http.StatusOK, userID)
+	}
+}
+
+func AuthCallbackHandler(db *sqlx.DB) gin.HandlerFunc {
+	return func (ctx *gin.Context) {
+		tmpContext := context.WithValue(ctx.Request.Context(), "provider", "google")
+		newRequestContext := ctx.Request.WithContext(tmpContext)
+		user, err := gothic.CompleteUserAuth(ctx.Writer, newRequestContext)
+		if err != nil {
+		}
+
+		userID := UserCheck(user, db)
+
+		if err := CreateSessionID(ctx, userID); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		if err := CreateSessionID(ctx, user); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		ctx.Status(http.StatusOK)
+		// Found = MovedTemporarily
+		ctx.Redirect(http.StatusFound, os.Getenv("AUTH_CALLBACK"))
 	}
 }
 
@@ -120,58 +160,6 @@ func LogoutHandler(db *sqlx.DB) gin.HandlerFunc {
 
 		session.Clear()
 		if err := session.Save(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		ctx.Status(http.StatusOK)
-	}
-}
-
-func RegisterHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
-	return func (ctx *gin.Context) {
-		var authData Credentials
-		if err := ctx.ShouldBindJSON(&authData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
-			return
-		}
-
-		err := v.Struct(authData)
-		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
-			return
-		}
-
-		hasher := sha512.New()
-		hasher.Write([]byte(authData.Password))
-		passwordHash := hex.EncodeToString(hasher.Sum(nil))
-
-		uuid, err := nanoid.Nanoid()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		query := sq.Insert("users").Columns("public_id", "email", "password_hash").Values(uuid, authData.Email, passwordHash)
-
-		queryString, queryStringArgs, err := query.ToSql()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		tx, err := db.Begin()
-		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if err := tx.Commit(); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
