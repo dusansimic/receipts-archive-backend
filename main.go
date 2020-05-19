@@ -55,7 +55,7 @@ func GetUserID(ctx *gin.Context) (string, bool) {
 func main() {
 	router := gin.Default()
 
-	store := cookie.NewStore([]byte(os.Getenv("COOKIE_STORE")))
+	store := cookie.NewStore([]byte(os.Getenv("SESSION_COOKIE_SECRET")))
 	store.Options(sessions.Options{
 		MaxAge: 3600,
 		Path: "/",
@@ -77,7 +77,7 @@ func main() {
 	}
 
 	// Setup OAuth provider (Google)
-	gothic.Store = cookie.NewStore([]byte(os.Getenv("COOKIE_SECRET")))
+	gothic.Store = cookie.NewStore([]byte(os.Getenv("GOTHIC_COOKIE_SECRET")))
 	goth.UseProviders(google.New(os.Getenv("GOOGLE_OAUTH_CLIENT_KEY"), os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"), os.Getenv("GOOGLE_OAUTH_CALLBACK_URL")))
 
 	// Request data validator

@@ -28,8 +28,8 @@ Here is the list of environment variables and their description.
 
 |Environment variable|Description|
 |-|-|
-|COOKIE_SECRET|Secret for the cookie|
-|JWT_KEY|Key for generating JWT|
+|SESSION_COOKIE_SECRET|Secret for the session cookie|
+|GOTHIC_COOKIE_SECRET|Secret for the Gothic cookie (3rd party service OAuth)|
 |GOOGLE_OAUTH_CLIENT_KEY|Client id for Google oauth|
 |GOOGLE_OAUTH_CLIENT_SECRET|Client secret for Google auth|
 |GOOGLE_OAUTH_CALLBACK_URL|Callback url for oauth on the backend (use localhost if in dev mode)|
