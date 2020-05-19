@@ -9,6 +9,7 @@ import (
 	// Server related stuff
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 
@@ -29,7 +30,7 @@ import (
 
 // PublicToPrivateUserID gets the database entry id of a user from database that
 // corresponds to a specific public id.
-func PublicToPrivateUserID(db *sqlx.DB, PublicID string) (StructID) {
+func PublicToPrivateUserID(db *sqlx.DB, PublicID string) StructID {
 	userIDQuery := sq.Select("id").From("users").Where(sq.Eq{"public_id": PublicID})
 	userIDQueryString, userIDQueryStringArgs, err := userIDQuery.ToSql()
 	if err != nil {
@@ -53,6 +54,16 @@ func GetUserID(ctx *gin.Context) (string, bool) {
 
 func main() {
 	router := gin.Default()
+
+	store := cookie.NewStore([]byte(os.Getenv("COOKIE_STORE")))
+	store.Options(sessions.Options{
+		MaxAge: 3600,
+		Path: "/",
+		HttpOnly: true,
+	})
+
+	router.Use(sessions.Sessions("auth_session", store))
+
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = strings.Split(os.Getenv("ALLOW_ORIGINS"), ",")
 	corsConfig.AllowCredentials = true
@@ -65,20 +76,26 @@ func main() {
 		return
 	}
 
+	// Setup OAuth provider (Google)
 	gothic.Store = cookie.NewStore([]byte(os.Getenv("COOKIE_SECRET")))
 	goth.UseProviders(google.New(os.Getenv("GOOGLE_OAUTH_CLIENT_KEY"), os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"), os.Getenv("GOOGLE_OAUTH_CALLBACK_URL")))
 
+	// Request data validator
 	v := validator.New()
 
 	auth := router.Group("/auth")
 	{
+		// Google auth handlers
+		// They also create session ids for user
 		auth.GET("", AuthHandler(db))
-
 		auth.GET("/callback", AuthCallbackHandler(db))
+
+		// Delete a session (logout)
+		auth.GET("/logout", AuthRequired(db), LogoutHandler(db))
 	}
 
 	locations := router.Group("/locations")
-	locations.Use(TokenVerificationMiddleware(db))
+	locations.Use(AuthRequired(db))
 	{
 		// Get list of locations (query available)
 		locations.GET("", GetLocationHandler(db))
@@ -94,7 +111,7 @@ func main() {
 	}
 
 	items := router.Group("/items")
-	items.Use(TokenVerificationMiddleware(db))
+	items.Use(AuthRequired(db))
 	{
 		// Get list of items (query available)
 		items.GET("", GetItemsHandler(db))
@@ -122,7 +139,7 @@ func main() {
 	}
 
 	receipts := router.Group("/receipts")
-	receipts.Use(TokenVerificationMiddleware(db))
+	receipts.Use(AuthRequired(db))
 	{
 		// Get list of receipts (query available)
 		receipts.GET("", GetReceiptsHandler(db))
