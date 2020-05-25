@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"net/http"
 	"time"
 
@@ -49,7 +48,7 @@ type ReceiptWithData struct {
 	PublicID string `json:"id"`
 	CreatedBy string `json:"createdBy"`
 	Location Location `json:"location"`
-	TotalPrice sql.NullFloat64 `json:"totalPrice"`
+	TotalPrice float64 `json:"totalPrice"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
