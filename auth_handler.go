@@ -21,11 +21,7 @@ type User struct {
 	RealName string `db:"real_name"`
 }
 
-type Credentials struct {
-	Email string `json:"email" validate:"required"`
-	Password string `json:"password" validate:"required"`
-}
-
+// StructPublicID is a struct for storing only public id
 type StructPublicID struct {
 	PublicID string `db:"public_id"`
 }
@@ -113,6 +109,7 @@ func UserCheck(user goth.User, db *sqlx.DB) StructPublicID {
 	return userID
 }
 
+// AuthHandler is Google OAuth handler
 func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		tmpContext := context.WithValue(ctx.Request.Context(), "provider", "google")
@@ -134,6 +131,7 @@ func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
 	}
 }
 
+// AuthCallbackHandler is Google OAuth callback handler
 func AuthCallbackHandler(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		tmpContext := context.WithValue(ctx.Request.Context(), "provider", "google")
@@ -154,6 +152,7 @@ func AuthCallbackHandler(db *sqlx.DB) gin.HandlerFunc {
 	}
 }
 
+// LogoutHandler is a handler for clearing login session storage
 func LogoutHandler(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		session := sessions.Default(ctx)

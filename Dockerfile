@@ -30,6 +30,7 @@ COPY --from=builder /app/main .
 
 # Setup environment variables
 ENV PORT=3000
+ENV GIN_MODE=release
 
 EXPOSE ${PORT}
 
