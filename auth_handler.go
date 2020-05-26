@@ -54,6 +54,9 @@ func AuthRequired(db *sqlx.DB) gin.HandlerFunc {
 		// See how to extend the session so it won't expire after an hour if used
 		// for an hour but will expire if not used for an hour.
 
+		// Passing userID inside http request context since GraphQL resolver can only read that one and not the gin context.
+		ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "userID", userID))
+
 		ctx.Set("userID", userID)
 		ctx.Next()
 	}

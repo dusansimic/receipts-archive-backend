@@ -45,12 +45,12 @@ type Receipt struct {
 
 // ReceiptWithData : Structure that should be used for getting receipt information including names, addresses, and everything else from receipts location from database
 type ReceiptWithData struct {
-	PublicID string `json:"id"`
-	CreatedBy string `json:"createdBy"`
-	Location Location `json:"location"`
-	TotalPrice float64 `json:"totalPrice"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	PublicID string `json:"id" graphql:"id"`
+	CreatedBy string `json:"createdBy" graphql:"createdBy"`
+	Location Location `json:"location" graphql:"location"`
+	TotalPrice float64 `json:"totalPrice" graphql:"totalPrice"`
+	CreatedAt time.Time `json:"createdAt" grpahql:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt" graphql:"updatedAt"`
 }
 
 func GetReceiptsHandler(db *sqlx.DB) gin.HandlerFunc {

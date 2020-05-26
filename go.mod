@@ -1,4 +1,4 @@
-module receipts-archive-backend
+module github.com/dusansimic/receipts-archive-backend
 
 go 1.14
 
@@ -10,7 +10,7 @@ require (
 	github.com/gin-contrib/sessions v0.0.3
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/validator v9.31.0+incompatible
-	github.com/graphql-go/graphql v0.7.9
+	github.com/graph-gophers/graphql-go v0.0.0-20200309224638-dae41bde9ef9
 	github.com/jkomyno/nanoid v0.0.0-20170914145641-30c81465692e
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/joho/godotenv v1.3.0
