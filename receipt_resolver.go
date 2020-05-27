@@ -25,6 +25,16 @@ type ReceiptResolverArgs struct {
 	LocationID *string
 }
 
+func hasField(ctx context.Context, fieldname string) bool {
+	for _, field := range graphql.SelectedFieldsFromContext(ctx) {
+		if field.Name == fieldname {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Receipts is a receipts resolver. If locationId argument is specified it
 // gets receipts from a specified location
 func (r *Resolver) Receipts(ctx context.Context, args ReceiptResolverArgs) (*[]*ReceiptResolver, error) {
@@ -50,6 +60,7 @@ func (r *Resolver) Receipts(ctx context.Context, args ReceiptResolverArgs) (*[]*
 	}
 
 	user := PublicToPrivateUserID(r.db, userID)
+	hasItemsField := hasField(ctx, "itemsInReceipt")
 
 	for rows.Next() {
 		receipt := ReceiptWithDataAndItems{}
@@ -63,15 +74,17 @@ func (r *Resolver) Receipts(ctx context.Context, args ReceiptResolverArgs) (*[]*
 			return nil, err
 		}
 
-		query := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Join("receipts ON receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"receipts.created_by": user.ID, "receipts.public_id": receipt.PublicID})
+		if hasItemsField {
+			query := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Join("receipts ON receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"receipts.created_by": user.ID, "receipts.public_id": receipt.PublicID})
 
-		queryString, queryStringArgs, err := query.ToSql()
-		if err != nil {
-			return nil, err
-		}
+			queryString, queryStringArgs, err := query.ToSql()
+			if err != nil {
+				return nil, err
+			}
 
-		if err := r.db.Select(&receipt.items, queryString, queryStringArgs...); err != nil {
-			return nil, err
+			if err := r.db.Select(&receipt.items, queryString, queryStringArgs...); err != nil {
+				return nil, err
+			}
 		}
 
 		resolver = append(resolver, &ReceiptResolver{

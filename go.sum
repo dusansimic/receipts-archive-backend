@@ -13,6 +13,8 @@ github.com/bradleypeabody/gorilla-sessions-memcache v0.0.0-20181103040241-659414
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
+github.com/dusansimic/graphql-go v0.0.0-20200527085124-d2e01d8becaa h1:jugp+QJ5rYHpcPMxOeYpmLTv7HHconJmGpTFfoUzxXM=
+github.com/dusansimic/graphql-go v0.0.0-20200527085124-d2e01d8becaa/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/friendsofgo/graphiql v0.2.2 h1:ccnuxpjgIkB+Lr9YB2ZouiZm7wvciSfqwpa9ugWzmn0=
 github.com/friendsofgo/graphiql v0.2.2/go.mod h1:8Y2kZ36AoTGWs78+VRpvATyt3LJBx0SZXmay80ZTRWo=
 github.com/gbaptista/requested-fields v0.0.0-20190523212846-58625e872757 h1:lCJMUhPFPfuFvNIV1l4j1KJRqKh9W6G+ZBeyYUpxNjY=
