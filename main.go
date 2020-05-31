@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	// Server related stuff
-
+	"github.com/friendsofgo/graphiql"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -83,6 +83,15 @@ func main() {
 	// Request data validator
 	v := validator.New()
 
+	if gin.Mode() == gin.DebugMode {
+		graphiqlHandler, err := graphiql.NewGraphiqlHandler("/graphql")
+		if err != nil {
+			log.Fatalln(err.Error())
+			return
+		}
+		router.GET("/graphiql", gin.WrapH(graphiqlHandler))
+	}
+
 	auth := router.Group("/auth")
 	{
 		// Google auth handlers
@@ -92,6 +101,13 @@ func main() {
 
 		// Delete a session (logout)
 		auth.GET("/logout", AuthRequired(db), LogoutHandler(db))
+	}
+
+	graphql := router.Group("/graphql")
+	graphql.Use(AuthRequired(db))
+	{
+		// GraphQL request handler
+		graphql.POST("", GraphQLHandler(db))
 	}
 
 	locations := router.Group("/locations")
