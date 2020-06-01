@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"os"
@@ -7,7 +7,11 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func generateDatabase() (*sqlx.DB, error) {
+type Options struct {
+	DatabasePath string
+}
+
+func (o Options) GenerateDatabase() (*sqlx.DB, error) {
 	userTableSchema := `
 	create table users (
 		id integer primary key autoincrement unique,
@@ -63,10 +67,10 @@ func generateDatabase() (*sqlx.DB, error) {
 		foreign key (item_id) references items(id)
 	);`
 
-	if _, err := os.Stat("receipts.db"); err != nil {
-		os.Create("receipts.db")
+	if _, err := os.Stat(o.DatabasePath); err != nil {
+		os.Create(o.DatabasePath)
 
-		db, err := sqlx.Connect("sqlite3", "./receipts.db")
+		db, err := sqlx.Connect("sqlite3", o.DatabasePath)
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +94,7 @@ func generateDatabase() (*sqlx.DB, error) {
 		return db, nil
 	}
 
-	db, err := sqlx.Connect("sqlite3", "./receipts.db")
+	db, err := sqlx.Connect("sqlite3", o.DatabasePath)
 	if err != nil {
 		return nil, err
 	}

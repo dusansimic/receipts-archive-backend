@@ -1,6 +1,7 @@
-package main
+package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"time"
 
@@ -106,7 +107,11 @@ func GetReceiptsHandler(db *sqlx.DB) gin.HandlerFunc {
 
 		for rows.Next() {
 			receipt := ReceiptWithData{}
-			err := rows.Scan(&receipt.PublicID, &receipt.Location.PublicID, &receipt.CreatedBy, &receipt.Location.Name, &receipt.Location.Address, &receipt.CreatedAt, &receipt.UpdatedAt, &receipt.TotalPrice)
+			var totalPrice sql.NullFloat64
+
+			err := rows.Scan(&receipt.PublicID, &receipt.Location.PublicID, &receipt.CreatedBy, &receipt.Location.Name, &receipt.Location.Address, &receipt.CreatedAt, &receipt.UpdatedAt, &totalPrice)
+
+			receipt.TotalPrice = totalPrice.Float64
 
 			if err != nil {
 				ctx.String(http.StatusInternalServerError, err.Error())

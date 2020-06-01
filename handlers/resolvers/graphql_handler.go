@@ -1,9 +1,9 @@
-package main
+package resolvers
 
 import (
+	"github.com/gin-gonic/gin"
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 )
 

@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -24,6 +24,30 @@ type User struct {
 // StructPublicID is a struct for storing only public id
 type StructPublicID struct {
 	PublicID string `db:"public_id"`
+}
+
+// PublicToPrivateUserID gets the database entry id of a user from database that
+// corresponds to a specific public id.
+func PublicToPrivateUserID(db *sqlx.DB, PublicID string) StructID {
+	userIDQuery := sq.Select("id").From("users").Where(sq.Eq{"public_id": PublicID})
+	userIDQueryString, userIDQueryStringArgs, err := userIDQuery.ToSql()
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	user := StructID{}
+	if err := db.Get(&user, userIDQueryString, userIDQueryStringArgs...); err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	return user
+}
+
+// GetUserID get the user id from specified context. It's literarly used just
+// so I can write one line instead of two.
+func GetUserID(ctx *gin.Context) (string, bool) {
+	userID, userIDExists := ctx.Get("userID")
+	return userID.(string), userIDExists
 }
 
 // AuthRequired verifies token sent via request in the cookie and

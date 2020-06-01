@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"database/sql"
@@ -122,6 +122,7 @@ func PostItemsInReceiptHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFu
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
+
 
 		item := StructID{}
 		if err := db.Get(&item, itemIDQueryString, itemIDQueryStringArgs...); err != nil {

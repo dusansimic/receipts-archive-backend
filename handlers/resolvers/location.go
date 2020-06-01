@@ -1,16 +1,17 @@
-package main
+package resolvers 
 
 import (
 	"context"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/dusansimic/receipts-archive-backend/handlers"
 	graphql "github.com/graph-gophers/graphql-go"
 )
 
 // LocationResolver is a struct for resolved location
 type LocationResolver struct {
-	location Location
+	location handlers.Location
 }
 
 // LocationResolverArgs is a struct for location resolver arguments
@@ -21,7 +22,7 @@ type LocationResolverArgs struct {
 // Locations is a locations resolver. If name argument is specified, it searches
 // for locations by name 
 func (r *Resolver) Locations(ctx context.Context, args LocationResolverArgs) (*[]*LocationResolver, error) {
-	user := PublicToPrivateUserID(r.db, ctx.Value("userID").(string))
+	user := handlers.PublicToPrivateUserID(r.db, ctx.Value("userID").(string))
 
 	query := sq.Select("public_id, name, address, created_at, updated_at").From("locations").Where(sq.Eq{"created_by": user.ID})
 
@@ -35,7 +36,7 @@ func (r *Resolver) Locations(ctx context.Context, args LocationResolverArgs) (*[
 		return nil, err
 	}
 
-	locations := []Location{}
+	locations := []handlers.Location{}
 	if err := r.db.Select(&locations, queryString, queryStringArgs...); err != nil {
 		return nil, err
 	}

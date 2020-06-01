@@ -1,18 +1,19 @@
-package main
+package resolvers
 
 import (
 	"context"
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/dusansimic/receipts-archive-backend/handlers"
 	graphql "github.com/graph-gophers/graphql-go"
 )
 
 // ReceiptWithDataAndItems is a struct for storing both receipt with its data
 // and items from that receipt. This struct is used only in receipt resolver.
 type ReceiptWithDataAndItems struct {
-	ReceiptWithData
-	items []ItemInReceipt
+	handlers.ReceiptWithData
+	items []handlers.ItemInReceipt
 }
 
 // ReceiptResolver is a struct for resolved receipt
@@ -59,7 +60,7 @@ func (r *Resolver) Receipts(ctx context.Context, args ReceiptResolverArgs) (*[]*
 		return nil, err
 	}
 
-	user := PublicToPrivateUserID(r.db, userID)
+	user := handlers.PublicToPrivateUserID(r.db, userID)
 	hasItemsField := hasField(ctx, "itemsInReceipt")
 
 	for rows.Next() {

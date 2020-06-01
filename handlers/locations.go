@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"database/sql"
@@ -11,6 +11,8 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/jkomyno/nanoid"
 	"github.com/jmoiron/sqlx"
+
+	// Import SQLite3 driver
 	_ "github.com/mattn/go-sqlite3"
 )
 
