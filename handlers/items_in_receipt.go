@@ -41,9 +41,9 @@ type ItemInReceipt struct {
 	Amount float32 `db:"amount" json:"amount"`
 }
 
-// GetItemsInReceiptHandler is a Gin handler function for getting items from
+// GetItemsInReceipt is a Gin handler function for getting items from
 // a specific receipt.
-func GetItemsInReceiptHandler(db *sqlx.DB) gin.HandlerFunc {
+func GetItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -77,9 +77,9 @@ func GetItemsInReceiptHandler(db *sqlx.DB) gin.HandlerFunc {
 	}
 }
 
-// PostItemsInReceiptHandler is a Gin handler function for adding new items to
+// PostItemsInReceipt is a Gin handler function for adding new items to
 // a specific receipt.
-func PostItemsInReceiptHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func PostItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -164,9 +164,9 @@ func PostItemsInReceiptHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFu
 	}
 }
 
-// PutItemsInReceiptHandler is a Gin handler function for updating items in a
+// PutItemsInReceipt is a Gin handler function for updating items in a
 // specific receipt.
-func PutItemsInReceiptHandler(db *sqlx.DB) gin.HandlerFunc {
+func PutItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -224,9 +224,9 @@ func PutItemsInReceiptHandler(db *sqlx.DB) gin.HandlerFunc {
 	}
 }
 
-// DeleteItemsInReceiptHandler is a Gin handler function for deleting items from
+// DeleteItemsInReceipt is a Gin handler function for deleting items from
 // a specific receipt.
-func DeleteItemsInReceiptHandler (db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func DeleteItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {

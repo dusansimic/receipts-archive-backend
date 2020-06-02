@@ -50,8 +50,8 @@ type Item struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
-// GetItemsHandler is a Gin handler function for getting items.
-func GetItemsHandler(db *sqlx.DB) gin.HandlerFunc {
+// GetItems is a Gin handler function for getting items.
+func GetItems(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -88,8 +88,8 @@ func GetItemsHandler(db *sqlx.DB) gin.HandlerFunc {
 	}
 }
 
-// PostItemsHandler is a Gin handler function for adding new items.
-func PostItemsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+// PostItems is a Gin handler function for adding new items.
+func PostItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -145,8 +145,8 @@ func PostItemsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	}
 }
 
-// PutItemsHandler is a Gin handler function for updating items.
-func PutItemsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+// PutItems is a Gin handler function for updating items.
+func PutItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -208,8 +208,8 @@ func PutItemsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	}
 }
 
-// DeleteItemsHandler is a Gin handler function for deleting items.
-func DeleteItemsHandler (db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+// DeleteItems is a Gin handler function for deleting items.
+func DeleteItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {

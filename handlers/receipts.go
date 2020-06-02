@@ -54,7 +54,8 @@ type ReceiptWithData struct {
 	UpdatedAt time.Time `json:"updatedAt" graphql:"updatedAt"`
 }
 
-func GetReceiptsHandler(db *sqlx.DB) gin.HandlerFunc {
+// GetReceipts handles get requests for receipts
+func GetReceipts(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -111,6 +112,11 @@ func GetReceiptsHandler(db *sqlx.DB) gin.HandlerFunc {
 
 			err := rows.Scan(&receipt.PublicID, &receipt.Location.PublicID, &receipt.CreatedBy, &receipt.Location.Name, &receipt.Location.Address, &receipt.CreatedAt, &receipt.UpdatedAt, &totalPrice)
 
+			// If database is unable to get the total price that means there are no
+			// items in the receipt and the default result for that will be an invalid
+			// flag in sql.NullFloat64 type and a 0 (zero) in Float64 value. This is
+			// nice for us since we just wan't that, the result and if there are no
+			// receipts the result is 0.
 			receipt.TotalPrice = totalPrice.Float64
 
 			if err != nil {
@@ -125,7 +131,8 @@ func GetReceiptsHandler(db *sqlx.DB) gin.HandlerFunc {
 	}
 }
 
-func PostReceiptsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+// PostReceipts handles post requests for receipts
+func PostReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -209,7 +216,8 @@ func PostReceiptsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	}
 }
 
-func PutReceiptsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+// PutReceipts handles put requests for receipts
+func PutReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -279,7 +287,8 @@ func PutReceiptsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	}
 }
 
-func DeleteReceiptsHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+// DeleteReceipts handlers delete requests for receipts
+func DeleteReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {

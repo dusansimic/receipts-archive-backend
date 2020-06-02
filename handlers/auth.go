@@ -53,7 +53,7 @@ func GetUserID(ctx *gin.Context) (string, bool) {
 // AuthRequired verifies token sent via request in the cookie and
 // checks if the user exists in the database. Afther that adds user id as a
 // property inside request context.
-func AuthRequired(db *sqlx.DB) gin.HandlerFunc {
+func AuthRequired() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		session := sessions.Default(ctx)
 
@@ -180,7 +180,7 @@ func AuthCallbackHandler(db *sqlx.DB) gin.HandlerFunc {
 }
 
 // LogoutHandler is a handler for clearing login session storage
-func LogoutHandler(db *sqlx.DB) gin.HandlerFunc {
+func LogoutHandler() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		session := sessions.Default(ctx)
 

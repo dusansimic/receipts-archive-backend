@@ -48,8 +48,8 @@ type Location struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
-// GetLocationHandler is a Gin handler function for getting locations.
-func GetLocationHandler(db *sqlx.DB) gin.HandlerFunc {
+// GetLocations is a Gin handler function for getting locations.
+func GetLocations(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -87,8 +87,8 @@ func GetLocationHandler(db *sqlx.DB) gin.HandlerFunc {
 	}
 }
 
-// PostLocationHandler is a Gin handler function for adding new locations.
-func PostLocationHandler(db *sqlx.DB) gin.HandlerFunc {
+// PostLocation is a Gin handler function for adding new locations.
+func PostLocations(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -138,8 +138,8 @@ func PostLocationHandler(db *sqlx.DB) gin.HandlerFunc {
 	}
 }
 
-// PutLocationHandler is a Gin handler function for updating a location.
-func PutLocationHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+// PutLocations is a Gin handler function for updating a location.
+func PutLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -218,8 +218,8 @@ func PutLocationHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	}
 }
 
-// DeleteLocationHandler is a Gin handler function for deleting a location.
-func DeleteLocationHandler(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+// DeleteLocations is a Gin handler function for deleting a location.
+func DeleteLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {

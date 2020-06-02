@@ -56,7 +56,6 @@ func NewEngine(db *sqlx.DB) *gin.Engine {
 		router.GET("/graphiql", gin.WrapH(graphiqlHandler))
 	}
 
-
 	auth := router.Group("/auth")
 	{
 		// Google auth handlers
@@ -65,7 +64,7 @@ func NewEngine(db *sqlx.DB) *gin.Engine {
 		auth.GET("/callback", handlers.AuthCallbackHandler(db))
 
 		// Delete a session (logout)
-		auth.GET("/logout", handlers.AuthRequired(db), handlers.LogoutHandler(db))
+		auth.GET("/logout", handlers.AuthRequired(), handlers.LogoutHandler())
 	}
 
 	graphql := router.Group("/graphql")
@@ -75,63 +74,63 @@ func NewEngine(db *sqlx.DB) *gin.Engine {
 	}
 
 	locations := router.Group("/locations")
-	locations.Use(handlers.AuthRequired(db))
+	locations.Use(handlers.AuthRequired())
 	{
 		// Get list of locations (query available)
-		locations.GET("", handlers.GetLocationHandler(db))
+		locations.GET("", handlers.GetLocations(db))
 
 		// Add new location
-		locations.POST("", handlers.PostLocationHandler(db))
+		locations.POST("", handlers.PostLocations(db))
 
 		// Update location
-		locations.PUT("", handlers.PutLocationHandler(db, v))
+		locations.PUT("", handlers.PutLocations(db, v))
 
 		// Delete location
-		locations.DELETE("", handlers.DeleteLocationHandler(db, v))
+		locations.DELETE("", handlers.DeleteLocations(db, v))
 	}
 
 	items := router.Group("/items")
-	items.Use(handlers.AuthRequired(db))
+	items.Use(handlers.AuthRequired())
 	{
 		// Get list of items (query available)
-		items.GET("", handlers.GetItemsHandler(db))
+		items.GET("", handlers.GetItems(db))
 
 		// Get list of items from a specific receipt
-		items.GET("/inreceipt/:id", handlers.GetItemsInReceiptHandler(db))
+		items.GET("/inreceipt/:id", handlers.GetItemsInReceipt(db))
 
 		// Add new item
-		items.POST("", handlers.PostItemsHandler(db, v))
+		items.POST("", handlers.PostItems(db, v))
 
 		// Add item to receipts
-		items.POST("/inreceipt", handlers.PostItemsInReceiptHandler(db, v))
+		items.POST("/inreceipt", handlers.PostItemsInReceipt(db, v))
 
 		// Update item
-		items.PUT("", handlers.PutItemsHandler(db, v))
+		items.PUT("", handlers.PutItems(db, v))
 
 		// Update item from specific receipt
-		items.PUT("/inreceipt", handlers.PutItemsInReceiptHandler(db))
+		items.PUT("/inreceipt", handlers.PutItemsInReceipt(db))
 
 		// Delete item
-		items.DELETE("", handlers.DeleteItemsHandler(db, v))
+		items.DELETE("", handlers.DeleteItems(db, v))
 
 		// Delete item from receipt
-		items.DELETE("/inreceipt", handlers.DeleteItemsInReceiptHandler(db, v))
+		items.DELETE("/inreceipt", handlers.DeleteItemsInReceipt(db, v))
 	}
 
 	receipts := router.Group("/receipts")
-	receipts.Use(handlers.AuthRequired(db))
+	receipts.Use(handlers.AuthRequired())
 	{
 		// Get list of receipts (query available)
-		receipts.GET("", handlers.GetReceiptsHandler(db))
+		receipts.GET("", handlers.GetReceipts(db))
 
 		// Add new receipt
-		receipts.POST("", handlers.PostReceiptsHandler(db, v))
+		receipts.POST("", handlers.PostReceipts(db, v))
 
 		// Update receipt
-		receipts.PUT("", handlers.PutReceiptsHandler(db, v))
+		receipts.PUT("", handlers.PutReceipts(db, v))
 
 		// Delete receipt
-		receipts.DELETE("", handlers.DeleteReceiptsHandler(db, v))
+		receipts.DELETE("", handlers.DeleteReceipts(db, v))
 	}
 
 	return router
