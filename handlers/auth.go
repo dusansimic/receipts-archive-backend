@@ -26,6 +26,12 @@ type StructPublicID struct {
 	PublicID string `db:"public_id"`
 }
 
+type key string
+const (
+	providerContextKey key = "provider"
+	userIDContextKey key = "userID"
+)
+
 // PublicToPrivateUserID gets the database entry id of a user from database that
 // corresponds to a specific public id.
 func PublicToPrivateUserID(db *sqlx.DB, PublicID string) StructID {
@@ -75,7 +81,7 @@ func AuthRequired() gin.HandlerFunc {
 		// for an hour but will expire if not used for an hour.
 
 		// Passing userID inside http request context since GraphQL resolver can only read that one and not the gin context.
-		ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "userID", userID))
+		ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), userIDContextKey, userID))
 
 		ctx.Set("userID", userID)
 		ctx.Next()
@@ -139,7 +145,7 @@ func UserCheck(user goth.User, db *sqlx.DB) StructPublicID {
 // AuthHandler is Google OAuth handler
 func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
-		tmpContext := context.WithValue(ctx.Request.Context(), "provider", "google")
+		tmpContext := context.WithValue(ctx.Request.Context(), providerContextKey, "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
 		user, err := gothic.CompleteUserAuth(ctx.Writer, newRequestContext)
 		if err != nil {
@@ -161,7 +167,7 @@ func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
 // AuthCallbackHandler is Google OAuth callback handler
 func AuthCallbackHandler(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
-		tmpContext := context.WithValue(ctx.Request.Context(), "provider", "google")
+		tmpContext := context.WithValue(ctx.Request.Context(), providerContextKey, "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
 		user, err := gothic.CompleteUserAuth(ctx.Writer, newRequestContext)
 		if err != nil {

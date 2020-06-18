@@ -87,7 +87,7 @@ func GetLocations(db *sqlx.DB) gin.HandlerFunc {
 	}
 }
 
-// PostLocation is a Gin handler function for adding new locations.
+// PostLocations is a Gin handler function for adding new locations.
 func PostLocations(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
