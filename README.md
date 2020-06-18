@@ -2,7 +2,7 @@
 
 Backed for Receipts Archive written in Go. This is a work in progress and project that I use to loearn more about full stack development and deployment and fix everyday problems that I have.
 
-Goal is to have an web app that would be used for storing receipts from grocery shopping and see stats about what items are bought the most, where are they bought, how much do they cost and other usefull stuff.
+Goal is to have an web app that would be used for storing receipts from grocery shopping and see stats about what items are bought the most, where are they bought, how much do they cost and other useful stuff.
 
 It's written in Go so it's very easy to deploy it with Docker.
 
@@ -22,7 +22,7 @@ $ go build -o main
 
 ## Run
 
-You'll need to set environment variables before running the backend. You can use `.env` file to store environment variables without specifing them on every execution of the backend.
+You'll need to set environment variables before running the backend. You can use `.env` file to store environment variables without specifying them on every execution of the backend.
 
 Here is the list of environment variables and their description.
 

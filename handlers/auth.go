@@ -43,7 +43,7 @@ func PublicToPrivateUserID(db *sqlx.DB, PublicID string) StructID {
 	return user
 }
 
-// GetUserID get the user id from specified context. It's literarly used just
+// GetUserID get the user id from specified context. It's literally used just
 // so I can write one line instead of two.
 func GetUserID(ctx *gin.Context) (string, bool) {
 	userID, userIDExists := ctx.Get("userID")
