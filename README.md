@@ -44,5 +44,16 @@ $ ./main
 
 The SQLite database will be automatically generated when running the backend for the first time.
 
+### Docker
+
+You can also run this backend inside a docker container. Just pull the image and run it with this command.
+
+```sh
+$ docker pull dusansimic/receipts-archive-backend
+$ docker run -e ... dusansimic/receipts-archive-backend
+```
+
+Just add environment variables through the command since You can't use `.env` file this way.
+
 ## License
 MIT
