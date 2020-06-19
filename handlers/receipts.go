@@ -69,7 +69,7 @@ func GetReceipts(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		if searchQuery.PublicID == "" && createdBy == "" && searchQuery.LocationID == "" {
+		if searchQuery.PublicID == "" && createdBy.PublicID == "" && searchQuery.LocationID == "" {
 			ctx.String(http.StatusBadRequest, "No search parameters specified!")
 			return
 		}
@@ -84,7 +84,7 @@ func GetReceipts(db *sqlx.DB) gin.HandlerFunc {
 		if searchQuery.PublicID != "" {
 			query = query.Where(sq.Eq{"receipts.public_id": searchQuery.PublicID})
 		} else {
-			if createdBy != "" {
+			if createdBy.PublicID != "" {
 				query = query.Where(sq.Eq{"users.public_id": createdBy})
 			}
 			if searchQuery.LocationID != "" {
@@ -165,7 +165,11 @@ func PostReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		uuid, err := nanoid.Nanoid()
 		if err != nil {
@@ -237,7 +241,11 @@ func PutReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		query := sq.Update("receipts")
 
@@ -308,7 +316,11 @@ func DeleteReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		query := sq.Delete("receipts").Where(sq.Eq{"public_id": receiptData.PublicID, "created_by": user.ID})
 

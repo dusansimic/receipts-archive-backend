@@ -57,7 +57,11 @@ func GetItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		query := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Join("receipts ON receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"receipts.public_id": receiptPublicID, "receipts.created_by": user.ID})
 
@@ -99,7 +103,11 @@ func PostItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		receiptIDQuery := sq.Select("id").From("receipts").Where(sq.Eq{"public_id": itemData.ReceiptID, "created_by": user.ID})
 
@@ -180,7 +188,11 @@ func PutItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		userOwnsQuery := sq.Select("items_in_receipt.id").From("items_in_receipt").Join("receipts on receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"items_in_receipt.public_id": itemData.PublicID, "receipts.created_by": user.ID})
 
@@ -246,7 +258,11 @@ func DeleteItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		userOwnsQuery := sq.Select("items_in_receipt.id").From("items_in_receipt").Join("receipts ON receipts.id = items_in_receipt.receipt_id")
 

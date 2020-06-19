@@ -109,7 +109,11 @@ func PostItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		uuid, err := nanoid.Nanoid()
 		if err != nil {
@@ -166,7 +170,11 @@ func PutItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		query := sq.Update("items")
 
@@ -229,7 +237,11 @@ func DeleteItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		query := sq.Delete("items").Where(sq.Eq{"public_id": itemData.PublicID, "created_by": user.ID})
 		queryString, queryStringArgs, err := query.ToSql()

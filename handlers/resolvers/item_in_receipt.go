@@ -23,7 +23,11 @@ type ItemInReceiptResolverArgs struct {
 func (r *Resolver) ItemsInReceipt(ctx context.Context, args ItemInReceiptResolverArgs) (*[]*ItemInReceiptResolver, error) {
 	receiptID := args.ReceiptID
 
-	user := handlers.PublicToPrivateUserID(r.db, ctx.Value("userID").(string))
+	publicID := GetUserID(ctx)
+	user, err := publicID.PrivateID(r.db)
+	if err != nil {
+		return nil, err
+	}
 
 	query := sq.Select("items_in_receipt.public_id, items.public_id as item_public_id, items.name as item_name, items.price as item_price, items.unit as item_unit, items_in_receipt.amount").From("items_in_receipt").Join("items ON items.id = items_in_receipt.item_id").Join("receipts ON receipts.id = items_in_receipt.receipt_id").Where(sq.Eq{"receipts.created_by": user.ID})
 

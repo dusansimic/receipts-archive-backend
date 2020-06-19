@@ -1,6 +1,9 @@
 package resolvers
 
 import (
+	"context"
+
+	"github.com/dusansimic/receipts-archive-backend/handlers"
 	"github.com/gin-gonic/gin"
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -43,6 +46,12 @@ type ItemInReceipt {
 	amount: Float!
 }
 `
+
+func GetUserID(ctx context.Context) handlers.StructPublicID {
+	return handlers.StructPublicID{
+		PublicID: ctx.Value("userID").(string),
+	}
+}
 
 // Resolver struct for storing required data
 type Resolver struct {

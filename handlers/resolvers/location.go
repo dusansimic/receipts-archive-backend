@@ -22,7 +22,11 @@ type LocationResolverArgs struct {
 // Locations is a locations resolver. If name argument is specified, it searches
 // for locations by name 
 func (r *Resolver) Locations(ctx context.Context, args LocationResolverArgs) (*[]*LocationResolver, error) {
-	user := handlers.PublicToPrivateUserID(r.db, ctx.Value("userID").(string))
+	publicID := GetUserID(ctx)
+	user, err := publicID.PrivateID(r.db)
+	if err != nil {
+		return nil, err
+	}
 
 	query := sq.Select("public_id, name, address, created_at, updated_at").From("locations").Where(sq.Eq{"created_by": user.ID})
 

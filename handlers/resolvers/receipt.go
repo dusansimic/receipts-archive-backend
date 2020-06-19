@@ -39,10 +39,10 @@ func hasField(ctx context.Context, fieldname string) bool {
 // Receipts is a receipts resolver. If locationId argument is specified it
 // gets receipts from a specified location
 func (r *Resolver) Receipts(ctx context.Context, args ReceiptResolverArgs) (*[]*ReceiptResolver, error) {
-	userID := ctx.Value("userID").(string)
+	publicID := GetUserID(ctx)
 	locationID := args.LocationID
 
-	query := sq.Select("receipts.public_id, locations.public_id AS location_id, users.public_id AS created_by, locations.name AS name, locations.address AS address, receipts.created_at, receipts.updated_at, ROUND(SUM(items.price * items_in_receipt.amount), 2) AS total_price").From("receipts").Join("locations ON locations.id = receipts.location_id").Join("users ON users.id = receipts.created_by").LeftJoin("items_in_receipt ON items_in_receipt.receipt_id = receipts.id").LeftJoin("items ON items.id = items_in_receipt.item_id").GroupBy("receipts.id").Where(sq.Eq{"users.public_id": userID})
+	query := sq.Select("receipts.public_id, locations.public_id AS location_id, users.public_id AS created_by, locations.name AS name, locations.address AS address, receipts.created_at, receipts.updated_at, ROUND(SUM(items.price * items_in_receipt.amount), 2) AS total_price").From("receipts").Join("locations ON locations.id = receipts.location_id").Join("users ON users.id = receipts.created_by").LeftJoin("items_in_receipt ON items_in_receipt.receipt_id = receipts.id").LeftJoin("items ON items.id = items_in_receipt.item_id").GroupBy("receipts.id").Where(sq.Eq{"users.public_id": publicID.PublicID})
 
 	if locationID != nil {
 		query = query.Where(sq.Eq{"locations.public_id": locationID})
@@ -60,8 +60,15 @@ func (r *Resolver) Receipts(ctx context.Context, args ReceiptResolverArgs) (*[]*
 		return nil, err
 	}
 
-	user := handlers.PublicToPrivateUserID(r.db, userID)
+	user := handlers.StructID{}
+
 	hasItemsField := hasField(ctx, "itemsInReceipt")
+	if hasItemsField {
+		user, err = publicID.PrivateID(r.db)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	for rows.Next() {
 		receipt := ReceiptWithDataAndItems{}

@@ -28,17 +28,16 @@ type StructPublicID struct {
 
 type key string
 const (
-	providerContextKey key = "provider"
-	userIDContextKey key = "userID"
+	userIDContextKey = key("userID")
 )
 
-// PublicToPrivateUserID gets the database entry id of a user from database that
+// PrivateID gets the database entry id of a user from database that
 // corresponds to a specific public id.
-func PublicToPrivateUserID(db *sqlx.DB, PublicID string) StructID {
-	userIDQuery := sq.Select("id").From("users").Where(sq.Eq{"public_id": PublicID})
+func (s *StructPublicID) PrivateID(db *sqlx.DB) (StructID, error) {
+	userIDQuery := sq.Select("id").From("users").Where(sq.Eq{"public_id": s.PublicID})
 	userIDQueryString, userIDQueryStringArgs, err := userIDQuery.ToSql()
 	if err != nil {
-		log.Fatalln(err.Error())
+		return StructID{}, err
 	}
 
 	user := StructID{}
@@ -46,14 +45,16 @@ func PublicToPrivateUserID(db *sqlx.DB, PublicID string) StructID {
 		log.Fatalln(err.Error())
 	}
 
-	return user
+	return user, nil
 }
 
 // GetUserID get the user id from specified context. It's literally used just
 // so I can write one line instead of two.
-func GetUserID(ctx *gin.Context) (string, bool) {
+func GetUserID(ctx *gin.Context) (StructPublicID, bool) {
 	userID, userIDExists := ctx.Get("userID")
-	return userID.(string), userIDExists
+	return StructPublicID{
+		PublicID: userID.(string),
+	}, userIDExists
 }
 
 // AuthRequired verifies token sent via request in the cookie and
@@ -108,7 +109,7 @@ func CreateSessionID(ctx *gin.Context, user StructPublicID) error {
 
 // UserCheck checks if there is a specified user in the database. If there is,
 // does nothing. If there is not, inserts the data in database.
-func UserCheck(user goth.User, db *sqlx.DB) StructPublicID {
+func UserCheck(user goth.User, db *sqlx.DB) (StructPublicID, error) {
 	query := sq.Select("public_id").From("users").Where(sq.Eq{"public_id": user.UserID})
 	queryString, queryStringArgs, err := query.ToSql()
 	if err != nil {
@@ -120,32 +121,32 @@ func UserCheck(user goth.User, db *sqlx.DB) StructPublicID {
 		insertQuery := sq.Insert("users").Columns("public_id", "real_name").Values(user.UserID, user.Email)
 		insertQueryString, insertArgs, err := insertQuery.ToSql()
 		if err != nil {
-			log.Fatalln(err.Error())
+			return userID, err
 		}
 
 		tx, err := db.Begin()
 		if err != nil {
-			log.Fatalln(err.Error())
+			return userID, err
 		}
 
 		if _, err := tx.Exec(insertQueryString, insertArgs...); err != nil {
-			log.Fatalln(err.Error())
+			return userID, err
 		}
 
 		if err := tx.Commit(); err != nil {
-			log.Fatalln(err.Error())
+			return userID, err
 		}
 
 		userID.PublicID = user.UserID
 	}
 
-	return userID
+	return userID, nil
 }
 
 // AuthHandler is Google OAuth handler
 func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
-		tmpContext := context.WithValue(ctx.Request.Context(), providerContextKey, "google")
+		tmpContext := context.WithValue(ctx.Request.Context(), gothic.ProviderParamKey, "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
 		user, err := gothic.CompleteUserAuth(ctx.Writer, newRequestContext)
 		if err != nil {
@@ -153,7 +154,11 @@ func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		userID := UserCheck(user, db)
+		userID, err := UserCheck(user, db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		if err := CreateSessionID(ctx, userID); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
@@ -167,13 +172,19 @@ func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
 // AuthCallbackHandler is Google OAuth callback handler
 func AuthCallbackHandler(db *sqlx.DB) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
-		tmpContext := context.WithValue(ctx.Request.Context(), providerContextKey, "google")
+		tmpContext := context.WithValue(ctx.Request.Context(), gothic.ProviderParamKey, "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
 		user, err := gothic.CompleteUserAuth(ctx.Writer, newRequestContext)
 		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
 		}
 
-		userID := UserCheck(user, db)
+		userID, err := UserCheck(user, db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		if err := CreateSessionID(ctx, userID); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())

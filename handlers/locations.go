@@ -63,7 +63,11 @@ func GetLocations(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		query := sq.Select("public_id, name, address, created_at, updated_at").From("locations").Where(sq.Eq{"created_by": user.ID})
 
@@ -102,7 +106,11 @@ func PostLocations(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		uuid, err := nanoid.Nanoid()
 		if err != nil {
@@ -159,7 +167,11 @@ func PutLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		userOwnsQuery := sq.Select("id").From("locations").Where(sq.Eq{"public_id": locationData.PublicID, "created_by": user.ID})
 
@@ -239,7 +251,11 @@ func DeleteLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		user := PublicToPrivateUserID(db, createdBy)
+		user, err := createdBy.PrivateID(db)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		userOwnsQuery := sq.Select("id").From("locations").Where(sq.Eq{"public_id": locationData.PublicID, "created_by": user.ID})
 
