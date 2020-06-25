@@ -85,7 +85,7 @@ func GetReceipts(db *sqlx.DB) gin.HandlerFunc {
 			query = query.Where(sq.Eq{"receipts.public_id": searchQuery.PublicID})
 		} else {
 			if createdBy.PublicID != "" {
-				query = query.Where(sq.Eq{"users.public_id": createdBy})
+				query = query.Where(sq.Eq{"users.public_id": createdBy.PublicID})
 			}
 			if searchQuery.LocationID != "" {
 				query = query.Where(sq.Eq{"locations.public_id": searchQuery.LocationID})

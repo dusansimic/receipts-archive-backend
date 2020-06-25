@@ -7,11 +7,11 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type Options struct {
+type SQLOptions struct {
 	DatabasePath string
 }
 
-func (o Options) GenerateDatabase() (*sqlx.DB, error) {
+func (o SQLOptions) GenerateDatabase() (*sqlx.DB, error) {
 	userTableSchema := `
 	create table users (
 		id integer primary key autoincrement unique,

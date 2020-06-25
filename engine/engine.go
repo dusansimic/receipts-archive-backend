@@ -14,6 +14,7 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
+	"github.com/go-redis/redis/v8"
 	"github.com/jmoiron/sqlx"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
@@ -21,7 +22,7 @@ import (
 )
 
 // NewEngine creates a new Gin engine
-func NewEngine(db *sqlx.DB) *gin.Engine {
+func NewEngine(db *sqlx.DB, rdb *redis.Client) *gin.Engine {
 	router := gin.Default()
 
 	corsConfig := cors.DefaultConfig()
@@ -60,11 +61,11 @@ func NewEngine(db *sqlx.DB) *gin.Engine {
 	{
 		// Google auth handlers
 		// They also create session ids for user
-		auth.GET("", handlers.AuthHandler(db))
-		auth.GET("/callback", handlers.AuthCallbackHandler(db))
+		auth.GET("", handlers.AuthHandler(db, rdb))
+		auth.GET("/callback", handlers.AuthCallbackHandler(db, rdb))
 
 		// Delete a session (logout)
-		auth.GET("/logout", handlers.AuthRequired(), handlers.LogoutHandler())
+		auth.GET("/logout", handlers.AuthRequired(rdb), handlers.LogoutHandler(rdb))
 	}
 
 	graphql := router.Group("/graphql")
@@ -74,7 +75,7 @@ func NewEngine(db *sqlx.DB) *gin.Engine {
 	}
 
 	locations := router.Group("/locations")
-	locations.Use(handlers.AuthRequired())
+	locations.Use(handlers.AuthRequired(rdb))
 	{
 		// Get list of locations (query available)
 		locations.GET("", handlers.GetLocations(db))
@@ -90,7 +91,7 @@ func NewEngine(db *sqlx.DB) *gin.Engine {
 	}
 
 	items := router.Group("/items")
-	items.Use(handlers.AuthRequired())
+	items.Use(handlers.AuthRequired(rdb))
 	{
 		// Get list of items (query available)
 		items.GET("", handlers.GetItems(db))
@@ -118,7 +119,7 @@ func NewEngine(db *sqlx.DB) *gin.Engine {
 	}
 
 	receipts := router.Group("/receipts")
-	receipts.Use(handlers.AuthRequired())
+	receipts.Use(handlers.AuthRequired(rdb))
 	{
 		// Get list of receipts (query available)
 		receipts.GET("", handlers.GetReceipts(db))

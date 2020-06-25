@@ -5,10 +5,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"github.com/jkomyno/nanoid"
 	"github.com/jmoiron/sqlx"
 	"github.com/markbates/goth"
@@ -60,7 +62,7 @@ func GetUserID(ctx *gin.Context) (StructPublicID, bool) {
 // AuthRequired verifies token sent via request in the cookie and
 // checks if the user exists in the database. Afther that adds user id as a
 // property inside request context.
-func AuthRequired() gin.HandlerFunc {
+func AuthRequired(rdb *redis.Client) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		session := sessions.Default(ctx)
 
@@ -70,10 +72,21 @@ func AuthRequired() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
+		savedUserID, err := rdb.Get(ctx, sessionID.(string)).Result()
+		if err != nil {
+			ctx.String(http.StatusUnauthorized, "Session has expired or is invalid!")
+			ctx.Abort()
+			return
+		}
 
 		userID := session.Get("user_id")
 		if userID == nil {
 			ctx.String(http.StatusInternalServerError, "Shit just hit the fan while trying to auth!")
+			ctx.Abort()
+			return
+		}
+		if userID != savedUserID {
+			ctx.String(http.StatusUnauthorized, "Session is invalid!")
 			ctx.Abort()
 			return
 		}
@@ -90,11 +103,16 @@ func AuthRequired() gin.HandlerFunc {
 }
 
 // CreateSessionID creates a session and returns the id for the user.
-func CreateSessionID(ctx *gin.Context, user StructPublicID) error {
+func CreateSessionID(ctx *gin.Context, rdb *redis.Client, user StructPublicID) error {
 	session := sessions.Default(ctx)
 
 	uuid, err := nanoid.Nanoid()
 	if err != nil {
+		return err
+	}
+
+	expiration, _ := time.ParseDuration("1h")
+	if err := rdb.Set(ctx, uuid, user.PublicID, expiration).Err(); err != nil {
 		return err
 	}
 
@@ -144,7 +162,7 @@ func UserCheck(user goth.User, db *sqlx.DB) (StructPublicID, error) {
 }
 
 // AuthHandler is Google OAuth handler
-func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
+func AuthHandler(db *sqlx.DB, rdb *redis.Client) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		tmpContext := context.WithValue(ctx.Request.Context(), gothic.ProviderParamKey, "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
@@ -160,7 +178,7 @@ func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		if err := CreateSessionID(ctx, userID); err != nil {
+		if err := CreateSessionID(ctx, rdb, userID); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -170,7 +188,7 @@ func AuthHandler(db *sqlx.DB) gin.HandlerFunc {
 }
 
 // AuthCallbackHandler is Google OAuth callback handler
-func AuthCallbackHandler(db *sqlx.DB) gin.HandlerFunc {
+func AuthCallbackHandler(db *sqlx.DB, rdb *redis.Client) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		tmpContext := context.WithValue(ctx.Request.Context(), gothic.ProviderParamKey, "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
@@ -186,7 +204,7 @@ func AuthCallbackHandler(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		if err := CreateSessionID(ctx, userID); err != nil {
+		if err := CreateSessionID(ctx, rdb, userID); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -197,9 +215,14 @@ func AuthCallbackHandler(db *sqlx.DB) gin.HandlerFunc {
 }
 
 // LogoutHandler is a handler for clearing login session storage
-func LogoutHandler() gin.HandlerFunc {
+func LogoutHandler(rdb *redis.Client) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		session := sessions.Default(ctx)
+
+		if err := rdb.Del(ctx, session.Get("userID").(string)).Err(); err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		session.Clear()
 		if err := session.Save(); err != nil {

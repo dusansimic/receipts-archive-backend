@@ -14,17 +14,24 @@ import (
 
 func main() {
 	// Setup database
-	database := database.Options{
+	sqlDB := database.SQLOptions{
 		DatabasePath: "./receipts.db",
 	}
-	db, err := database.GenerateDatabase()
+	db, err := sqlDB.GenerateDatabase()
 	if err != nil {
 		fmt.Println("Failed to connect to the database!")
 		fmt.Println(err)
 		panic(err)
 	}
 
-	router := engine.NewEngine(db)
+	redisDB := database.RedisOptions{
+		Addr: os.Getenv("SESSION_CACHE_DATABASE_ADDRESS"),
+		Password: os.Getenv("SESSION_CACHE_DATABASE_PASSWORD"),
+		DB: 0,
+	}
+	rdb := redisDB.NewConnection()
+
+	router := engine.NewEngine(db, rdb)
 
 	router.Run(":" + os.Getenv("PORT"))
 }
