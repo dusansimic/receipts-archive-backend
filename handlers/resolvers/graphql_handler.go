@@ -53,6 +53,11 @@ func GetUserID(ctx context.Context) handlers.StructPublicID {
 	}
 }
 
+// Options stores options for GraphQL resolver
+type Options struct {
+	DB *sqlx.DB
+}
+
 // Resolver struct for storing required data
 type Resolver struct {
 	db *sqlx.DB
@@ -74,6 +79,6 @@ type GraphQLBody struct {
 }
 
 // GraphQLHandler handles grpahql requests
-func GraphQLHandler(db *sqlx.DB) gin.HandlerFunc {
-	return gin.WrapH(&relay.Handler{Schema: NewSchema(db)})
+func (o Options) GraphQLHandler() gin.HandlerFunc {
+	return gin.WrapH(&relay.Handler{Schema: NewSchema(o.DB)})
 }

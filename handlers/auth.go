@@ -62,7 +62,7 @@ func GetUserID(ctx *gin.Context) (StructPublicID, bool) {
 // AuthRequired verifies token sent via request in the cookie and
 // checks if the user exists in the database. Afther that adds user id as a
 // property inside request context.
-func AuthRequired(rdb *redis.Client) gin.HandlerFunc {
+func (o Options) AuthRequired() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		session := sessions.Default(ctx)
 
@@ -72,7 +72,7 @@ func AuthRequired(rdb *redis.Client) gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		savedUserID, err := rdb.Get(ctx, sessionID.(string)).Result()
+		savedUserID, err := o.RDB.Get(ctx, sessionID.(string)).Result()
 		if err != nil {
 			ctx.String(http.StatusUnauthorized, "Session has expired or is invalid!")
 			ctx.Abort()
@@ -162,7 +162,7 @@ func UserCheck(user goth.User, db *sqlx.DB) (StructPublicID, error) {
 }
 
 // AuthHandler is Google OAuth handler
-func AuthHandler(db *sqlx.DB, rdb *redis.Client) gin.HandlerFunc {
+func (o Options) AuthHandler() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		tmpContext := context.WithValue(ctx.Request.Context(), gothic.ProviderParamKey, "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
@@ -172,13 +172,13 @@ func AuthHandler(db *sqlx.DB, rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		userID, err := UserCheck(user, db)
+		userID, err := UserCheck(user, o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		if err := CreateSessionID(ctx, rdb, userID); err != nil {
+		if err := CreateSessionID(ctx, o.RDB, userID); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -188,7 +188,7 @@ func AuthHandler(db *sqlx.DB, rdb *redis.Client) gin.HandlerFunc {
 }
 
 // AuthCallbackHandler is Google OAuth callback handler
-func AuthCallbackHandler(db *sqlx.DB, rdb *redis.Client) gin.HandlerFunc {
+func (o Options) AuthCallbackHandler() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		tmpContext := context.WithValue(ctx.Request.Context(), gothic.ProviderParamKey, "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
@@ -198,13 +198,13 @@ func AuthCallbackHandler(db *sqlx.DB, rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		userID, err := UserCheck(user, db)
+		userID, err := UserCheck(user, o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		if err := CreateSessionID(ctx, rdb, userID); err != nil {
+		if err := CreateSessionID(ctx, o.RDB, userID); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -215,11 +215,11 @@ func AuthCallbackHandler(db *sqlx.DB, rdb *redis.Client) gin.HandlerFunc {
 }
 
 // LogoutHandler is a handler for clearing login session storage
-func LogoutHandler(rdb *redis.Client) gin.HandlerFunc {
+func (o Options) LogoutHandler() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		session := sessions.Default(ctx)
 
-		if err := rdb.Del(ctx, session.Get("userID").(string)).Err(); err != nil {
+		if err := o.RDB.Del(ctx, session.Get("userID").(string)).Err(); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}

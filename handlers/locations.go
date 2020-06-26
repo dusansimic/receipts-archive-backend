@@ -8,9 +8,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator"
 	"github.com/jkomyno/nanoid"
-	"github.com/jmoiron/sqlx"
 
 	// Import SQLite3 driver
 	_ "github.com/mattn/go-sqlite3"
@@ -49,7 +47,7 @@ type Location struct {
 }
 
 // GetLocations is a Gin handler function for getting locations.
-func GetLocations(db *sqlx.DB) gin.HandlerFunc {
+func (o Options) GetLocations() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -63,7 +61,7 @@ func GetLocations(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -82,7 +80,7 @@ func GetLocations(db *sqlx.DB) gin.HandlerFunc {
 		}
 
 		locations := []Location{}
-		if err := db.Select(&locations, queryString, queryStringArgs...); err != nil {
+		if err := o.DB.Select(&locations, queryString, queryStringArgs...); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -92,7 +90,7 @@ func GetLocations(db *sqlx.DB) gin.HandlerFunc {
 }
 
 // PostLocations is a Gin handler function for adding new locations.
-func PostLocations(db *sqlx.DB) gin.HandlerFunc {
+func (o Options) PostLocations() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -106,7 +104,7 @@ func PostLocations(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -126,7 +124,7 @@ func PostLocations(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -147,7 +145,7 @@ func PostLocations(db *sqlx.DB) gin.HandlerFunc {
 }
 
 // PutLocations is a Gin handler function for updating a location.
-func PutLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func (o Options) PutLocations() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -161,13 +159,13 @@ func PutLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		err := v.Struct(locationData)
+		err := o.V.Struct(locationData)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -182,7 +180,7 @@ func PutLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 		}
 
 		var location StructID
-		if err := db.Get(&location, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
+		if err := o.DB.Get(&location, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
 			switch err {
 			case sql.ErrNoRows:
 				ctx.String(http.StatusUnauthorized, "Not authrized to delete specified item from receipt.")
@@ -210,7 +208,7 @@ func PutLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -231,7 +229,7 @@ func PutLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 }
 
 // DeleteLocations is a Gin handler function for deleting a location.
-func DeleteLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func (o Options) DeleteLocations() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -245,13 +243,13 @@ func DeleteLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		err := v.Struct(locationData)
+		err := o.V.Struct(locationData)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -266,7 +264,7 @@ func DeleteLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 		}
 
 		var location StructID
-		if err := db.Get(&location, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
+		if err := o.DB.Get(&location, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
 			ctx.String(http.StatusUnauthorized, "Not authrized to delete specified location.")
 			return
 		}
@@ -278,7 +276,7 @@ func DeleteLocations(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return

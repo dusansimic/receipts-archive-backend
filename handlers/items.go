@@ -8,9 +8,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator"
 	"github.com/jkomyno/nanoid"
-	"github.com/jmoiron/sqlx"
 )
 
 // ItemsGetQuery : Structure that should be used for getting query data on get request for items
@@ -51,7 +49,7 @@ type Item struct {
 }
 
 // GetItems is a Gin handler function for getting items.
-func GetItems(db *sqlx.DB) gin.HandlerFunc {
+func (o Options) GetItems() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -80,7 +78,7 @@ func GetItems(db *sqlx.DB) gin.HandlerFunc {
 		}
 
 		items := []Item{}
-		if err := db.Select(&items, queryString, queryStringArgs...); err != nil {
+		if err := o.DB.Select(&items, queryString, queryStringArgs...); err != nil {
 			log.Fatalln(err.Error())
 		}
 
@@ -89,7 +87,7 @@ func GetItems(db *sqlx.DB) gin.HandlerFunc {
 }
 
 // PostItems is a Gin handler function for adding new items.
-func PostItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func (o Options) PostItems() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -103,13 +101,13 @@ func PostItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		err := v.Struct(itemData)
+		err := o.V.Struct(itemData)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -129,7 +127,7 @@ func PostItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -150,7 +148,7 @@ func PostItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 }
 
 // PutItems is a Gin handler function for updating items.
-func PutItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func (o Options) PutItems() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -164,13 +162,13 @@ func PutItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		err := v.Struct(itemData)
+		err := o.V.Struct(itemData)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -196,7 +194,7 @@ func PutItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -217,7 +215,7 @@ func PutItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 }
 
 // DeleteItems is a Gin handler function for deleting items.
-func DeleteItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func (o Options) DeleteItems() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -231,13 +229,13 @@ func DeleteItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		err := v.Struct(itemData)
+		err := o.V.Struct(itemData)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -250,7 +248,7 @@ func DeleteItems(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return

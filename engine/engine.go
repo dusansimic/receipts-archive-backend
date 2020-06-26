@@ -70,81 +70,90 @@ func (o Options) NewEngine(db *sqlx.DB, rdb *redis.Client) *gin.Engine {
 		router.GET("/graphiql", gin.WrapH(graphiqlHandler))
 	}
 
+	handlers := handlers.Options{
+		DB: db,
+		RDB: rdb,
+		V: v,
+	}
+	resolvers := resolvers.Options{
+		DB: db,
+	}
+
 	auth := router.Group("/auth")
 	{
 		// Google auth handlers
 		// They also create session ids for user
-		auth.GET("", handlers.AuthHandler(db, rdb))
-		auth.GET("/callback", handlers.AuthCallbackHandler(db, rdb))
+		auth.GET("", handlers.AuthHandler())
+		auth.GET("/callback", handlers.AuthCallbackHandler())
 
 		// Delete a session (logout)
-		auth.GET("/logout", handlers.AuthRequired(rdb), handlers.LogoutHandler(rdb))
+		auth.GET("/logout", handlers.AuthRequired(), handlers.LogoutHandler())
 	}
 
 	graphql := router.Group("/graphql")
 	{
 		// GraphQL request handler
-		graphql.POST("", resolvers.GraphQLHandler(db))
+		graphql.POST("", resolvers.GraphQLHandler())
 	}
 
 	locations := router.Group("/locations")
-	locations.Use(handlers.AuthRequired(rdb))
+	locations.Use(handlers.AuthRequired())
 	{
 		// Get list of locations (query available)
-		locations.GET("", handlers.GetLocations(db))
+		locations.GET("", handlers.GetLocations())
 
 		// Add new location
-		locations.POST("", handlers.PostLocations(db))
+		locations.POST("", handlers.PostLocations())
 
 		// Update location
-		locations.PUT("", handlers.PutLocations(db, v))
+		locations.PUT("", handlers.PutLocations())
 
 		// Delete location
-		locations.DELETE("", handlers.DeleteLocations(db, v))
+		locations.DELETE("", handlers.DeleteLocations())
 	}
 
 	items := router.Group("/items")
-	items.Use(handlers.AuthRequired(rdb))
+	items.Use(handlers.AuthRequired())
 	{
 		// Get list of items (query available)
-		items.GET("", handlers.GetItems(db))
+		items.GET("", handlers.GetItems())
 
 		// Get list of items from a specific receipt
-		items.GET("/inreceipt/:id", handlers.GetItemsInReceipt(db))
+		items.GET("/inreceipt/:id", handlers.GetItemsInReceipt())
 
 		// Add new item
-		items.POST("", handlers.PostItems(db, v))
+		items.POST("", handlers.PostItems())
 
 		// Add item to receipts
-		items.POST("/inreceipt", handlers.PostItemsInReceipt(db, v))
+		items.POST("/inreceipt", handlers.PostItemsInReceipt())
 
 		// Update item
-		items.PUT("", handlers.PutItems(db, v))
+		items.PUT("", handlers.PutItems())
 
 		// Update item from specific receipt
-		items.PUT("/inreceipt", handlers.PutItemsInReceipt(db))
+		items.PUT("/inreceipt", handlers.PutItemsInReceipt())
 
 		// Delete item
-		items.DELETE("", handlers.DeleteItems(db, v))
+		items.DELETE("", handlers.DeleteItems())
 
 		// Delete item from receipt
-		items.DELETE("/inreceipt", handlers.DeleteItemsInReceipt(db, v))
+		items.DELETE("/inreceipt", handlers.DeleteItemsInReceipt())
 	}
 
 	receipts := router.Group("/receipts")
-	receipts.Use(handlers.AuthRequired(rdb))
+	receipts.Use(handlers.AuthRequired())
 	{
 		// Get list of receipts (query available)
-		receipts.GET("", handlers.GetReceipts(db))
+		receipts.GET("", handlers.GetReceipts())
 
 		// Add new receipt
-		receipts.POST("", handlers.PostReceipts(db, v))
+		receipts.POST("", handlers.PostReceipts())
 
 		// Update receipt
-		receipts.PUT("", handlers.PutReceipts(db, v))
+		receipts.PUT("", handlers.PutReceipts())
 
 		// Delete receipt
-		receipts.DELETE("", handlers.DeleteReceipts(db, v))
+		receipts.DELETE("", handlers.DeleteReceipts())
 	}
 
 	return router

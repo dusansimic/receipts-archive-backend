@@ -7,9 +7,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator"
 	"github.com/jkomyno/nanoid"
-	"github.com/jmoiron/sqlx"
 )
 
 // ReceiptsGetQuery : Structure that should be used for getting query data on get request for receipts
@@ -55,7 +53,7 @@ type ReceiptWithData struct {
 }
 
 // GetReceipts handles get requests for receipts
-func GetReceipts(db *sqlx.DB) gin.HandlerFunc {
+func (o Options) GetReceipts() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -99,7 +97,7 @@ func GetReceipts(db *sqlx.DB) gin.HandlerFunc {
 		}
 
 		receipts := []ReceiptWithData{}
-		rows, err := db.Queryx(queryString, queryStringArgs...)
+		rows, err := o.DB.Queryx(queryString, queryStringArgs...)
 
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
@@ -132,7 +130,7 @@ func GetReceipts(db *sqlx.DB) gin.HandlerFunc {
 }
 
 // PostReceipts handles post requests for receipts
-func PostReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func (o Options) PostReceipts() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -146,7 +144,7 @@ func PostReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		err := v.Struct(receiptData)
+		err := o.V.Struct(receiptData)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
@@ -160,12 +158,12 @@ func PostReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 		}
 
 		location := StructID{}
-		if err := db.Get(&location, locationIDQueryString, locationIDQueryStringArgs...); err != nil {
+		if err := o.DB.Get(&location, locationIDQueryString, locationIDQueryStringArgs...); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -200,7 +198,7 @@ func PostReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -221,7 +219,7 @@ func PostReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 }
 
 // PutReceipts handles put requests for receipts
-func PutReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func (o Options) PutReceipts() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -235,13 +233,13 @@ func PutReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		err := v.Struct(receiptData)
+		err := o.V.Struct(receiptData)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -259,7 +257,7 @@ func PutReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			}
 
 			location := StructID{}
-			if err := db.Get(&location, locationQueryString, locationQueryStringArgs...); err != nil {
+			if err := o.DB.Get(&location, locationQueryString, locationQueryStringArgs...); err != nil {
 				ctx.String(http.StatusInternalServerError, err.Error())
 				return
 			}
@@ -275,7 +273,7 @@ func PutReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -296,7 +294,7 @@ func PutReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 }
 
 // DeleteReceipts handlers delete requests for receipts
-func DeleteReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func (o Options) DeleteReceipts() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -310,13 +308,13 @@ func DeleteReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		err := v.Struct(receiptData)
+		err := o.V.Struct(receiptData)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -330,7 +328,7 @@ func DeleteReceipts(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return

@@ -7,9 +7,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator"
 	"github.com/jkomyno/nanoid"
-	"github.com/jmoiron/sqlx"
 )
 
 // ItemsInReceiptPostBody : Structure that should be used for getting json from body of a post request for adding item to a receipt
@@ -43,7 +41,7 @@ type ItemInReceipt struct {
 
 // GetItemsInReceipt is a Gin handler function for getting items from
 // a specific receipt.
-func GetItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
+func (o Options) GetItemsInReceipt() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -57,7 +55,7 @@ func GetItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -72,7 +70,7 @@ func GetItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
 		}
 
 		items := []ItemInReceipt{}
-		if err := db.Select(&items, queryString, queryStringArgs...); err != nil {
+		if err := o.DB.Select(&items, queryString, queryStringArgs...); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -83,7 +81,7 @@ func GetItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
 
 // PostItemsInReceipt is a Gin handler function for adding new items to
 // a specific receipt.
-func PostItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func (o Options) PostItemsInReceipt() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -97,13 +95,13 @@ func PostItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		err := v.Struct(itemData)
+		err := o.V.Struct(itemData)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -118,7 +116,7 @@ func PostItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 		}
 
 		receipt := StructID{}
-		if err := db.Get(&receipt, receiptIDQueryString, receiptIDQueryStringArgs...); err != nil {
+		if err := o.DB.Get(&receipt, receiptIDQueryString, receiptIDQueryStringArgs...); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -133,7 +131,7 @@ func PostItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 
 
 		item := StructID{}
-		if err := db.Get(&item, itemIDQueryString, itemIDQueryStringArgs...); err != nil {
+		if err := o.DB.Get(&item, itemIDQueryString, itemIDQueryStringArgs...); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -152,7 +150,7 @@ func PostItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -174,7 +172,7 @@ func PostItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 
 // PutItemsInReceipt is a Gin handler function for updating items in a
 // specific receipt.
-func PutItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
+func (o Options) PutItemsInReceipt() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -188,7 +186,7 @@ func PutItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -203,7 +201,7 @@ func PutItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
 		}
 
 		item := StructID{}
-		if err := db.Get(&item, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
+		if err := o.DB.Get(&item, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
 			ctx.String(http.StatusUnauthorized, "Not authrized to edit specified item from receipt.")
 			return
 		}
@@ -220,7 +218,7 @@ func PutItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -238,7 +236,7 @@ func PutItemsInReceipt(db *sqlx.DB) gin.HandlerFunc {
 
 // DeleteItemsInReceipt is a Gin handler function for deleting items from
 // a specific receipt.
-func DeleteItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
+func (o Options) DeleteItemsInReceipt() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
@@ -252,13 +250,13 @@ func DeleteItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		err := v.Struct(itemData)
+		err := o.V.Struct(itemData)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		user, err := createdBy.PrivateID(db)
+		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
@@ -275,7 +273,7 @@ func DeleteItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 		userOwnsQueryString, userOwnsQueryStringArgs, err := userOwnsQuery.ToSql()
 
 		var item StructID
-		if err := db.Get(&item, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
+		if err := o.DB.Get(&item, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
 			switch err {
 			case sql.ErrNoRows:
 				ctx.String(http.StatusUnauthorized, "Not authrized to delete specified item from receipt.")
@@ -300,7 +298,7 @@ func DeleteItemsInReceipt(db *sqlx.DB, v *validator.Validate) gin.HandlerFunc {
 			return
 		}
 
-		tx, err := db.Begin()
+		tx, err := o.DB.Begin()
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
