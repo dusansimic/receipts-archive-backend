@@ -2,8 +2,6 @@ package engine
 
 import (
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/dusansimic/receipts-archive-backend/handlers"
 	"github.com/dusansimic/receipts-archive-backend/handlers/resolvers"
@@ -21,12 +19,27 @@ import (
 	"github.com/markbates/goth/providers/google"
 )
 
+// GoogleOAuthOptions stores options for Google OAuth
+type GoogleOAuthOptions struct {
+	ClientKey string
+	ClientSecret string
+	CallbackURL string
+}
+
+// Options stores options for new engine
+type Options struct {
+	AllowOrigins []string
+	SessionCookieSecret []byte
+	GothicCookieSecret []byte
+	GoogleOAuthOptions
+}
+
 // NewEngine creates a new Gin engine
-func NewEngine(db *sqlx.DB, rdb *redis.Client) *gin.Engine {
+func (o Options) NewEngine(db *sqlx.DB, rdb *redis.Client) *gin.Engine {
 	router := gin.Default()
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = strings.Split(os.Getenv("ALLOW_ORIGINS"), ",")
+	corsConfig.AllowOrigins = o.AllowOrigins
 	corsConfig.AllowCredentials = true
 	router.Use(cors.New(corsConfig))
 
@@ -36,13 +49,13 @@ func NewEngine(db *sqlx.DB, rdb *redis.Client) *gin.Engine {
 			Path: "/",
 			HttpOnly: true,
 		},
-		Secret: []byte(os.Getenv("SESSION_COOKIE_SECRET")),
+		Secret: o.SessionCookieSecret,
 	}
 	router.Use(sessions.Sessions("auth_session", session.NewSessionStore()))
 
 	// Setup OAuth provider (Google)
-	gothic.Store = cookie.NewStore([]byte(os.Getenv("GOTHIC_COOKIE_SECRET")))
-	goth.UseProviders(google.New(os.Getenv("GOOGLE_OAUTH_CLIENT_KEY"), os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"), os.Getenv("GOOGLE_OAUTH_CALLBACK_URL")))
+	gothic.Store = cookie.NewStore(o.GothicCookieSecret)
+	goth.UseProviders(google.New(o.GoogleOAuthOptions.ClientKey, o.GoogleOAuthOptions.ClientSecret, o.GoogleOAuthOptions.CallbackURL))
 
 	// Request data validator
 	v := validator.New()

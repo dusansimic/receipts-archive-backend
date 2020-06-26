@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	// Server related stuff
 	"github.com/dusansimic/receipts-archive-backend/database"
@@ -31,7 +32,18 @@ func main() {
 	}
 	rdb := redisDB.NewConnection()
 
-	router := engine.NewEngine(db, rdb)
+	// engn because engine is used
+	engn := engine.Options{
+		AllowOrigins: strings.Split(os.Getenv("ALLOW_ORIGINS"), ","),
+		SessionCookieSecret: []byte(os.Getenv("SESSION_COOKIE_SECRET")),
+		GothicCookieSecret: []byte(os.Getenv("GOTHIC_COOKIE_SECRET")),
+		GoogleOAuthOptions: engine.GoogleOAuthOptions{
+			ClientKey: os.Getenv("GOOGLE_OAUTH_CLIENT_KEY"),
+			ClientSecret: os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
+			CallbackURL: os.Getenv("GOOGLE_OAUTH_CALLBACK_URL"),
+		},
+	}
+	router := engn.NewEngine(db, rdb)
 
 	router.Run(":" + os.Getenv("PORT"))
 }
