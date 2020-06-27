@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -53,13 +52,17 @@ func (o Options) GetItems() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var searchQuery ItemsGetQuery
 		if err := ctx.ShouldBindQuery(&searchQuery); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -73,13 +76,17 @@ func (o Options) GetItems() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		items := []Item{}
 		if err := o.DB.Select(&items, queryString, queryStringArgs...); err != nil {
-			log.Fatalln(err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 		}
 
 		ctx.JSON(http.StatusOK, items)
@@ -91,31 +98,41 @@ func (o Options) PostItems() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var itemData ItemsPostBody
 		if err := ctx.ShouldBindJSON(&itemData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		err := o.V.Struct(itemData)
 		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		uuid, err := nanoid.Nanoid()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -123,23 +140,31 @@ func (o Options) PostItems() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -152,25 +177,33 @@ func (o Options) PutItems() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var itemData ItemsPutBody
 		if err := ctx.ShouldBindJSON(&itemData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		err := o.V.Struct(itemData)
 		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -190,23 +223,31 @@ func (o Options) PutItems() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.Where(sq.Eq{"public_id": itemData.PublicID, "created_by": user.ID}).ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -219,43 +260,57 @@ func (o Options) DeleteItems() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var itemData ItemsDeleteBody
 		if err := ctx.ShouldBindJSON(&itemData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		err := o.V.Struct(itemData)
 		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		query := sq.Delete("items").Where(sq.Eq{"public_id": itemData.PublicID, "created_by": user.ID})
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			log.Fatalln(err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 		}
 
 		tx.Commit()

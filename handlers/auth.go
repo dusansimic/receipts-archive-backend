@@ -68,25 +68,33 @@ func (o Options) AuthRequired() gin.HandlerFunc {
 
 		sessionID := session.Get("session_id")
 		if sessionID == nil {
-			ctx.String(http.StatusUnauthorized, "Session has expired or is invalid!")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "session has expired or is invalid",
+			})
 			ctx.Abort()
 			return
 		}
 		savedUserID, err := o.RDB.Get(ctx, sessionID.(string)).Result()
 		if err != nil {
-			ctx.String(http.StatusUnauthorized, "Session has expired or is invalid!")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "session has expired or is invalid",
+			})
 			ctx.Abort()
 			return
 		}
 
 		userID := session.Get("user_id")
 		if userID == nil {
-			ctx.String(http.StatusInternalServerError, "Shit just hit the fan while trying to auth!")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "shit just hit the fan while trying to auth",
+			})
 			ctx.Abort()
 			return
 		}
 		if userID != savedUserID {
-			ctx.String(http.StatusUnauthorized, "Session is invalid!")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "session is invalid",
+			})
 			ctx.Abort()
 			return
 		}
@@ -174,12 +182,16 @@ func (o Options) AuthHandler() gin.HandlerFunc {
 
 		userID, err := UserCheck(user, o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := CreateSessionID(ctx, o.RDB, userID); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -194,18 +206,24 @@ func (o Options) AuthCallbackHandler() gin.HandlerFunc {
 		newRequestContext := ctx.Request.WithContext(tmpContext)
 		user, err := gothic.CompleteUserAuth(ctx.Writer, newRequestContext)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		userID, err := UserCheck(user, o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := CreateSessionID(ctx, o.RDB, userID); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -220,13 +238,17 @@ func (o Options) LogoutHandler() gin.HandlerFunc {
 		session := sessions.Default(ctx)
 
 		if err := o.RDB.Del(ctx, session.Get("userID").(string)).Err(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		session.Clear()
 		if err := session.Save(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 

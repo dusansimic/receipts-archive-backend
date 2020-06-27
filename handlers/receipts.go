@@ -57,23 +57,31 @@ func (o Options) GetReceipts() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var searchQuery ReceiptsGetQuery
 		if err := ctx.ShouldBindQuery(&searchQuery); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if searchQuery.PublicID == "" && createdBy.PublicID == "" && searchQuery.LocationID == "" {
-			ctx.String(http.StatusBadRequest, "No search parameters specified!")
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": "No search parameters specified!",
+			})
 			return
 		}
 
 		if searchQuery.PublicID != "" && searchQuery.LocationID != "" {
-			ctx.String(http.StatusBadRequest, "Too many parameters specified!")
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": "Too many parameters specified!",
+			})
 			return
 		}
 
@@ -92,7 +100,9 @@ func (o Options) GetReceipts() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -100,7 +110,9 @@ func (o Options) GetReceipts() gin.HandlerFunc {
 		rows, err := o.DB.Queryx(queryString, queryStringArgs...)
 
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -118,7 +130,9 @@ func (o Options) GetReceipts() gin.HandlerFunc {
 			receipt.TotalPrice = totalPrice.Float64
 
 			if err != nil {
-				ctx.String(http.StatusInternalServerError, err.Error())
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"message": err.Error(),
+				})
 				return
 			}
 
@@ -134,44 +148,58 @@ func (o Options) PostReceipts() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var receiptData ReceiptsPostBody
 		if err := ctx.ShouldBindJSON(&receiptData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		err := o.V.Struct(receiptData)
 		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		locationIDQuery := sq.Select("id").From("locations").Where(sq.Eq{"public_id": receiptData.LocationPublicID})
 		locationIDQueryString, locationIDQueryStringArgs, err := locationIDQuery.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		location := StructID{}
 		if err := o.DB.Get(&location, locationIDQueryString, locationIDQueryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		uuid, err := nanoid.Nanoid()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -179,13 +207,17 @@ func (o Options) PostReceipts() gin.HandlerFunc {
 		if receiptData.CreatedAt != "" {
 			createdAt, err = time.Parse(time.RFC3339, receiptData.CreatedAt)
 			if err != nil {
-				ctx.String(http.StatusInternalServerError, err.Error())
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"message": err.Error(),
+				})
 				return
 			}
 
 			updatedAt, err = time.Parse(time.RFC3339, receiptData.CreatedAt)
 			if err != nil {
-				ctx.String(http.StatusInternalServerError, err.Error())
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"message": err.Error(),
+				})
 				return
 			}
 		}
@@ -194,23 +226,31 @@ func (o Options) PostReceipts() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -223,25 +263,33 @@ func (o Options) PutReceipts() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var receiptData ReceiptsPutBody
 		if err := ctx.ShouldBindJSON(&receiptData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		err := o.V.Struct(receiptData)
 		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -252,13 +300,17 @@ func (o Options) PutReceipts() gin.HandlerFunc {
 
 			locationQueryString, locationQueryStringArgs, err := locationQuery.ToSql()
 			if err != nil {
-				ctx.String(http.StatusInternalServerError, err.Error())
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"message": err.Error(),
+				})
 				return
 			}
 
 			location := StructID{}
 			if err := o.DB.Get(&location, locationQueryString, locationQueryStringArgs...); err != nil {
-				ctx.String(http.StatusInternalServerError, err.Error())
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"message": err.Error(),
+				})
 				return
 			}
 
@@ -269,23 +321,31 @@ func (o Options) PutReceipts() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -298,25 +358,33 @@ func (o Options) DeleteReceipts() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var receiptData ReceiptsDeleteBody
 		if err := ctx.ShouldBindJSON(&receiptData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		err := o.V.Struct(receiptData)
 		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -324,23 +392,31 @@ func (o Options) DeleteReceipts() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 

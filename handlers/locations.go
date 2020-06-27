@@ -51,19 +51,25 @@ func (o Options) GetLocations() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var searchQuery LocationsGetQuery
 		if err := ctx.ShouldBindQuery(&searchQuery); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -75,13 +81,17 @@ func (o Options) GetLocations() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		locations := []Location{}
 		if err := o.DB.Select(&locations, queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -94,25 +104,33 @@ func (o Options) PostLocations() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var locationData LocationsPostBody
 		if err := ctx.ShouldBindJSON(&locationData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		uuid, err := nanoid.Nanoid()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -120,23 +138,31 @@ func (o Options) PostLocations() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -149,25 +175,33 @@ func (o Options) PutLocations() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var locationData LocationsPutBody
 		if err := ctx.ShouldBindJSON(&locationData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		err := o.V.Struct(locationData)
 		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -175,7 +209,9 @@ func (o Options) PutLocations() gin.HandlerFunc {
 
 		userOwnsQueryString, userOwnsQueryStringArgs, err := userOwnsQuery.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -183,10 +219,14 @@ func (o Options) PutLocations() gin.HandlerFunc {
 		if err := o.DB.Get(&location, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
 			switch err {
 			case sql.ErrNoRows:
-				ctx.String(http.StatusUnauthorized, "Not authrized to delete specified item from receipt.")
+				ctx.JSON(http.StatusUnauthorized, gin.H{
+					"message": "not authrized to delete specified item from receipt",
+				})
 				break
 			default:
-				ctx.String(http.StatusInternalServerError, err.Error())
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"message": err.Error(),
+				})
 			}
 			return
 		}
@@ -204,23 +244,31 @@ func (o Options) PutLocations() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.Where(sq.Eq{"public_id": locationData.PublicID}).ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -233,25 +281,33 @@ func (o Options) DeleteLocations() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var locationData LocationsDeleteBody
 		if err := ctx.ShouldBindJSON(&locationData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		err := o.V.Struct(locationData)
 		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -259,36 +315,48 @@ func (o Options) DeleteLocations() gin.HandlerFunc {
 
 		userOwnsQueryString, userOwnsQueryStringArgs, err := userOwnsQuery.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		var location StructID
 		if err := o.DB.Get(&location, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
-			ctx.String(http.StatusUnauthorized, "Not authrized to delete specified location.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "not authrized to delete specified location",
+			})
 			return
 		}
 
 		query := sq.Delete("locations").Where(sq.Eq{"public_id": locationData.PublicID})
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 

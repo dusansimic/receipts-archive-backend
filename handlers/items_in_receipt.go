@@ -45,19 +45,25 @@ func (o Options) GetItemsInReceipt() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		receiptPublicID := ctx.Param("id")
 		if receiptPublicID == "" {
-			ctx.String(http.StatusBadRequest, "Receipt id must be specified!")
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": "Receipt id must be specified!",
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -65,13 +71,17 @@ func (o Options) GetItemsInReceipt() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		items := []ItemInReceipt{}
 		if err := o.DB.Select(&items, queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -85,25 +95,33 @@ func (o Options) PostItemsInReceipt() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var itemData ItemsInReceiptPostBody
 		if err := ctx.ShouldBindJSON(&itemData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		err := o.V.Struct(itemData)
 		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -111,13 +129,17 @@ func (o Options) PostItemsInReceipt() gin.HandlerFunc {
 
 		receiptIDQueryString, receiptIDQueryStringArgs, err := receiptIDQuery.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		receipt := StructID{}
 		if err := o.DB.Get(&receipt, receiptIDQueryString, receiptIDQueryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -125,20 +147,26 @@ func (o Options) PostItemsInReceipt() gin.HandlerFunc {
 
 		itemIDQueryString, itemIDQueryStringArgs, err := itemIDQuery.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 
 		item := StructID{}
 		if err := o.DB.Get(&item, itemIDQueryString, itemIDQueryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		uuid, err := nanoid.Nanoid()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -146,23 +174,31 @@ func (o Options) PostItemsInReceipt() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -176,19 +212,25 @@ func (o Options) PutItemsInReceipt() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var itemData ItemsInReceiptPutBody
 		if err := ctx.ShouldBindJSON(&itemData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -196,13 +238,17 @@ func (o Options) PutItemsInReceipt() gin.HandlerFunc {
 
 		userOwnsQueryString, userOwnsQueryStringArgs, err := userOwnsQuery.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		item := StructID{}
 		if err := o.DB.Get(&item, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
-			ctx.String(http.StatusUnauthorized, "Not authrized to edit specified item from receipt.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "not authrized to edit specified item from receipt",
+			})
 			return
 		}
 
@@ -214,13 +260,17 @@ func (o Options) PutItemsInReceipt() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.Where(sq.Eq{"public_id": itemData.PublicID}).ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -240,25 +290,33 @@ func (o Options) DeleteItemsInReceipt() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
-			ctx.String(http.StatusUnauthorized, "User id not found in authorization token.")
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"message": "user id not found in authorization token",
+			})
 			return
 		}
 
 		var itemData ItemsInReceiptDeleteBody
 		if err := ctx.ShouldBindJSON(&itemData); err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		err := o.V.Struct(itemData)
 		if err != nil {
-			ctx.String(http.StatusBadRequest, err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		user, err := createdBy.PrivateID(o.DB)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
@@ -276,10 +334,14 @@ func (o Options) DeleteItemsInReceipt() gin.HandlerFunc {
 		if err := o.DB.Get(&item, userOwnsQueryString, userOwnsQueryStringArgs...); err != nil {
 			switch err {
 			case sql.ErrNoRows:
-				ctx.String(http.StatusUnauthorized, "Not authrized to delete specified item from receipt.")
+				ctx.JSON(http.StatusUnauthorized, gin.H{
+					"message": "not authrized to delete specified item from receipt",
+				})
 				break
 			default:
-				ctx.String(http.StatusInternalServerError, err.Error())
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"message": err.Error(),
+				})
 			}
 			return
 		}
@@ -294,23 +356,31 @@ func (o Options) DeleteItemsInReceipt() gin.HandlerFunc {
 
 		queryString, queryStringArgs, err := query.ToSql()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		tx, err := o.DB.Begin()
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if _, err := tx.Exec(queryString, queryStringArgs...); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
 		if err := tx.Commit(); err != nil {
-			ctx.String(http.StatusInternalServerError, err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
 
