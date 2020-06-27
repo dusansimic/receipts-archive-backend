@@ -12,37 +12,37 @@ import (
 
 // ItemsInReceiptPostBody : Structure that should be used for getting json from body of a post request for adding item to a receipt
 type ItemsInReceiptPostBody struct {
-	ReceiptID string `json:"receiptId" validate:"required"`
-	ItemID string `json:"itemId" validate:"required"`
-	Amount float32 `json:"amount" validate:"required"`
+	ReceiptID string  `json:"receiptId" validate:"required"`
+	ItemID    string  `json:"itemId" validate:"required"`
+	Amount    float32 `json:"amount" validate:"required"`
 }
 
 // ItemsInReceiptPutBody : Structure that should be used for getting json from body of a put request for items form a specific receipt
 type ItemsInReceiptPutBody struct {
-	PublicID string `json:"id" validate:"required"`
-	Amount float32 `json:"amount"`
+	PublicID string  `json:"id" validate:"required"`
+	Amount   float32 `json:"amount"`
 }
 
 // ItemsInReceiptDeleteBody : Structure that should be used for getting json data from body of a delete request for items in a specific receipt
 type ItemsInReceiptDeleteBody struct {
-	ItemID string `json:"itemId" validate:"required"`
+	ItemID    string `json:"itemId" validate:"required"`
 	ReceiptID string `json:"receiptId"`
 }
 
 // ItemInReceipt : Structure that should be used for getting item information of a specific receipt from database
 type ItemInReceipt struct {
-	PublicID string `db:"public_id" json:"id"`
-	ItemPublicID string `db:"item_public_id" json:"itemId"`
-	Name string `db:"item_name" json:"name"`
-	Price float32 `db:"item_price" json:"price"`
-	Unit string `db:"item_unit" json:"unit"`
-	Amount float32 `db:"amount" json:"amount"`
+	PublicID     string  `db:"public_id" json:"id"`
+	ItemPublicID string  `db:"item_public_id" json:"itemId"`
+	Name         string  `db:"item_name" json:"name"`
+	Price        float32 `db:"item_price" json:"price"`
+	Unit         string  `db:"item_unit" json:"unit"`
+	Amount       float32 `db:"amount" json:"amount"`
 }
 
 // GetItemsInReceipt is a Gin handler function for getting items from
 // a specific receipt.
 func (o Options) GetItemsInReceipt() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -92,7 +92,7 @@ func (o Options) GetItemsInReceipt() gin.HandlerFunc {
 // PostItemsInReceipt is a Gin handler function for adding new items to
 // a specific receipt.
 func (o Options) PostItemsInReceipt() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -153,7 +153,6 @@ func (o Options) PostItemsInReceipt() gin.HandlerFunc {
 			return
 		}
 
-
 		item := StructID{}
 		if err := o.DB.Get(&item, itemIDQueryString, itemIDQueryStringArgs...); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -209,7 +208,7 @@ func (o Options) PostItemsInReceipt() gin.HandlerFunc {
 // PutItemsInReceipt is a Gin handler function for updating items in a
 // specific receipt.
 func (o Options) PutItemsInReceipt() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -287,7 +286,7 @@ func (o Options) PutItemsInReceipt() gin.HandlerFunc {
 // DeleteItemsInReceipt is a Gin handler function for deleting items from
 // a specific receipt.
 func (o Options) DeleteItemsInReceipt() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{

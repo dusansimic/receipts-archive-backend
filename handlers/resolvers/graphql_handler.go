@@ -73,9 +73,9 @@ func NewSchema(db *sqlx.DB) *graphql.Schema {
 
 // GraphQLBody is a struct for storing graphql request data
 type GraphQLBody struct {
-	Query string `json:"query"`
+	Query         string `json:"query"`
 	OperationName string `json:"operationName"`
-	Variables string `json:"variables"`
+	Variables     string `json:"variables"`
 }
 
 // GraphQLHandler handles grpahql requests

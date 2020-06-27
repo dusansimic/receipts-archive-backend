@@ -29,6 +29,7 @@ type StructPublicID struct {
 }
 
 type key string
+
 const (
 	userIDContextKey = key("userID")
 )
@@ -63,7 +64,7 @@ func GetUserID(ctx *gin.Context) (StructPublicID, bool) {
 // checks if the user exists in the database. Afther that adds user id as a
 // property inside request context.
 func (o Options) AuthRequired() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		session := sessions.Default(ctx)
 
 		sessionID := session.Get("session_id")
@@ -171,7 +172,7 @@ func UserCheck(user goth.User, db *sqlx.DB) (StructPublicID, error) {
 
 // AuthHandler is Google OAuth handler
 func (o Options) AuthHandler() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		tmpContext := context.WithValue(ctx.Request.Context(), gothic.ProviderParamKey, "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
 		user, err := gothic.CompleteUserAuth(ctx.Writer, newRequestContext)
@@ -201,7 +202,7 @@ func (o Options) AuthHandler() gin.HandlerFunc {
 
 // AuthCallbackHandler is Google OAuth callback handler
 func (o Options) AuthCallbackHandler() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		tmpContext := context.WithValue(ctx.Request.Context(), gothic.ProviderParamKey, "google")
 		newRequestContext := ctx.Request.WithContext(tmpContext)
 		user, err := gothic.CompleteUserAuth(ctx.Writer, newRequestContext)
@@ -234,7 +235,7 @@ func (o Options) AuthCallbackHandler() gin.HandlerFunc {
 
 // LogoutHandler is a handler for clearing login session storage
 func (o Options) LogoutHandler() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		session := sessions.Default(ctx)
 
 		if err := o.RDB.Del(ctx, session.Get("userID").(string)).Err(); err != nil {

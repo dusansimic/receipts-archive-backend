@@ -19,17 +19,17 @@ type ItemsGetQuery struct {
 // ItemsPostBody : Structure that should be used for getting json from body of a post request for items
 type ItemsPostBody struct {
 	// CreatedBy string `json:"createdBy" validate:"required"`
-	Name string `json:"name" validate:"required"`
+	Name  string  `json:"name" validate:"required"`
 	Price float32 `json:"price" validate:"required"`
-	Unit string `json:"unit" validate:"required"`
+	Unit  string  `json:"unit" validate:"required"`
 }
 
 // ItemsPutBody : Structure that should be used for getting json from body of a put request for items
 type ItemsPutBody struct {
-	PublicID string `json:"id" validate:"required"`
-	Name string `json:"name"`
-	Price float32 `json:"price"`
-	Unit string `json:"unit"`
+	PublicID string  `json:"id" validate:"required"`
+	Name     string  `json:"name"`
+	Price    float32 `json:"price"`
+	Unit     string  `json:"unit"`
 }
 
 // ItemsDeleteBody : Structure that should be used for getting json data from body of a delete request for items
@@ -39,17 +39,17 @@ type ItemsDeleteBody struct {
 
 // Item : Structure that should be used for getting item information from database
 type Item struct {
-	PublicID string `db:"public_id" json:"id"`
-	Name string `db:"name" json:"name"`
-	Price float32 `db:"price" json:"price"`
-	Unit string `db:"unit" json:"unit"`
+	PublicID  string    `db:"public_id" json:"id"`
+	Name      string    `db:"name" json:"name"`
+	Price     float32   `db:"price" json:"price"`
+	Unit      string    `db:"unit" json:"unit"`
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 // GetItems is a Gin handler function for getting items.
 func (o Options) GetItems() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -95,7 +95,7 @@ func (o Options) GetItems() gin.HandlerFunc {
 
 // PostItems is a Gin handler function for adding new items.
 func (o Options) PostItems() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -174,7 +174,7 @@ func (o Options) PostItems() gin.HandlerFunc {
 
 // PutItems is a Gin handler function for updating items.
 func (o Options) PutItems() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -257,7 +257,7 @@ func (o Options) PutItems() gin.HandlerFunc {
 
 // DeleteItems is a Gin handler function for deleting items.
 func (o Options) DeleteItems() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{

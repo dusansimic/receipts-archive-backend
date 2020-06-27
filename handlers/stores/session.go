@@ -8,7 +8,7 @@ import (
 // Session is an options struct for the session
 type Session struct {
 	SessionOptions sessions.Options
-	Secret []byte
+	Secret         []byte
 }
 
 // NewSessionStore creates new store for the session

@@ -16,7 +16,7 @@ type StructID struct {
 
 // Options stores database and validator options for handlers
 type Options struct {
-	DB *sqlx.DB
+	DB  *sqlx.DB
 	RDB *redis.Client
-	V *validator.Validate
+	V   *validator.Validate
 }

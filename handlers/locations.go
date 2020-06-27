@@ -21,15 +21,15 @@ type LocationsGetQuery struct {
 
 // LocationsPostBody : Structure that should be used for getting json from body of a post request for locations
 type LocationsPostBody struct {
-	Name string `json:"name" validate:"required"`
+	Name    string `json:"name" validate:"required"`
 	Address string `json:"address" validate:"required"`
 }
 
 // LocationsPutBody : Structure that should be used for getting json from body of a put request for locations
 type LocationsPutBody struct {
 	PublicID string `json:"id" validate:"required"`
-	Name string `json:"name"`
-	Address string `json:"address"`
+	Name     string `json:"name"`
+	Address  string `json:"address"`
 }
 
 // LocationsDeleteBody : Structure that should be used for getting json data from body of a delete request for locations
@@ -39,16 +39,16 @@ type LocationsDeleteBody struct {
 
 // Location : Structure that should be used for getting location information from database
 type Location struct {
-	PublicID string `db:"public_id" json:"id"`
-	Name string `db:"name" json:"name"`
-	Address string `db:"address" json:"address"`
+	PublicID  string    `db:"public_id" json:"id"`
+	Name      string    `db:"name" json:"name"`
+	Address   string    `db:"address" json:"address"`
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 // GetLocations is a Gin handler function for getting locations.
 func (o Options) GetLocations() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -101,7 +101,7 @@ func (o Options) GetLocations() gin.HandlerFunc {
 
 // PostLocations is a Gin handler function for adding new locations.
 func (o Options) PostLocations() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -172,7 +172,7 @@ func (o Options) PostLocations() gin.HandlerFunc {
 
 // PutLocations is a Gin handler function for updating a location.
 func (o Options) PutLocations() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -278,7 +278,7 @@ func (o Options) PutLocations() gin.HandlerFunc {
 
 // DeleteLocations is a Gin handler function for deleting a location.
 func (o Options) DeleteLocations() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{

@@ -12,19 +12,19 @@ import (
 
 // ReceiptsGetQuery : Structure that should be used for getting query data on get request for receipts
 type ReceiptsGetQuery struct {
-	PublicID string `form:"id"`
+	PublicID   string `form:"id"`
 	LocationID string `form:"locationId"`
 }
 
 // ReceiptsPostBody : Structure that should be used for getting json from body of a post request for receipts
 type ReceiptsPostBody struct {
 	LocationPublicID string `json:"id" validate:"required"`
-	CreatedAt string `json:"createdAt"`
+	CreatedAt        string `json:"createdAt"`
 }
 
 // ReceiptsPutBody : Structure that should be used for getting json from body of a put request for receipts
 type ReceiptsPutBody struct {
-	PublicID string `json:"id" validate:"required"`
+	PublicID   string `json:"id" validate:"required"`
 	LocationID string `json:"locationId"`
 }
 
@@ -35,26 +35,26 @@ type ReceiptsDeleteBody struct {
 
 // Receipt : Structure that should be used for getting receipt information from database
 type Receipt struct {
-	PublicID string `db:"public_id" json:"id"`
-	LocationID string `db:"location_id" json:"locationId"`
-	CreatedBy string `db:"created_by" json:"createdBy"`
-	CreatedAt time.Time `db:"created_at" json:"createdAt"`
-	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+	PublicID   string    `db:"public_id" json:"id"`
+	LocationID string    `db:"location_id" json:"locationId"`
+	CreatedBy  string    `db:"created_by" json:"createdBy"`
+	CreatedAt  time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt  time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 // ReceiptWithData : Structure that should be used for getting receipt information including names, addresses, and everything else from receipts location from database
 type ReceiptWithData struct {
-	PublicID string `json:"id" graphql:"id"`
-	CreatedBy string `json:"createdBy" graphql:"createdBy"`
-	Location Location `json:"location" graphql:"location"`
-	TotalPrice float64 `json:"totalPrice" graphql:"totalPrice"`
-	CreatedAt time.Time `json:"createdAt" grpahql:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt" graphql:"updatedAt"`
+	PublicID   string    `json:"id" graphql:"id"`
+	CreatedBy  string    `json:"createdBy" graphql:"createdBy"`
+	Location   Location  `json:"location" graphql:"location"`
+	TotalPrice float64   `json:"totalPrice" graphql:"totalPrice"`
+	CreatedAt  time.Time `json:"createdAt" grpahql:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt" graphql:"updatedAt"`
 }
 
 // GetReceipts handles get requests for receipts
 func (o Options) GetReceipts() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -145,7 +145,7 @@ func (o Options) GetReceipts() gin.HandlerFunc {
 
 // PostReceipts handles post requests for receipts
 func (o Options) PostReceipts() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -260,7 +260,7 @@ func (o Options) PostReceipts() gin.HandlerFunc {
 
 // PutReceipts handles put requests for receipts
 func (o Options) PutReceipts() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -355,7 +355,7 @@ func (o Options) PutReceipts() gin.HandlerFunc {
 
 // DeleteReceipts handlers delete requests for receipts
 func (o Options) DeleteReceipts() gin.HandlerFunc {
-	return func (ctx *gin.Context) {
+	return func(ctx *gin.Context) {
 		createdBy, createdByExists := GetUserID(ctx)
 		if !createdByExists {
 			ctx.JSON(http.StatusUnauthorized, gin.H{

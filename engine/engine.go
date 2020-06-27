@@ -21,16 +21,16 @@ import (
 
 // GoogleOAuthOptions stores options for Google OAuth
 type GoogleOAuthOptions struct {
-	ClientKey string
+	ClientKey    string
 	ClientSecret string
-	CallbackURL string
+	CallbackURL  string
 }
 
 // Options stores options for new engine
 type Options struct {
-	AllowOrigins []string
+	AllowOrigins        []string
 	SessionCookieSecret []byte
-	GothicCookieSecret []byte
+	GothicCookieSecret  []byte
 	GoogleOAuthOptions
 }
 
@@ -45,8 +45,8 @@ func (o Options) NewEngine(db *sqlx.DB, rdb *redis.Client) *gin.Engine {
 
 	session := stores.Session{
 		SessionOptions: sessions.Options{
-			MaxAge: 3600,
-			Path: "/",
+			MaxAge:   3600,
+			Path:     "/",
 			HttpOnly: true,
 		},
 		Secret: o.SessionCookieSecret,
@@ -71,9 +71,9 @@ func (o Options) NewEngine(db *sqlx.DB, rdb *redis.Client) *gin.Engine {
 	}
 
 	handlers := handlers.Options{
-		DB: db,
+		DB:  db,
 		RDB: rdb,
-		V: v,
+		V:   v,
 	}
 	resolvers := resolvers.Options{
 		DB: db,

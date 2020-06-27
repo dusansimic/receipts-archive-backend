@@ -1,4 +1,4 @@
-package resolvers 
+package resolvers
 
 import (
 	"context"
@@ -20,7 +20,7 @@ type LocationResolverArgs struct {
 }
 
 // Locations is a locations resolver. If name argument is specified, it searches
-// for locations by name 
+// for locations by name
 func (r *Resolver) Locations(ctx context.Context, args LocationResolverArgs) (*[]*LocationResolver, error) {
 	publicID := GetUserID(ctx)
 	user, err := publicID.PrivateID(r.db)
