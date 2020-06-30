@@ -1,10 +1,10 @@
 # Receipts Archive Backend
 
-Backed for Receipts Archive written in Go. This is a work in progress and project that I use to loearn more about full stack development and deployment and fix everyday problems that I have.
+Backed for Receipts Archive written in Go. This is a work in progress and project that I use to learn more about full stack development and deployment and fix everyday problems that I have.
 
 Goal is to have an web app that would be used for storing receipts from grocery shopping and see stats about what items are bought the most, where are they bought, how much do they cost and other useful stuff.
 
-It's written in Go so it's very easy to deploy it with Docker.
+It's written in Go so it's very easy to deploy it with Docker or other containerized environments.
 
 ## Build
 
@@ -35,6 +35,7 @@ Here is the list of environment variables and their description.
 |GOOGLE_OAUTH_CALLBACK_URL|Callback url for oauth on the backend (use localhost if in dev mode)|
 |AUTH_CALLBACK|Callback url to the frontend after authentication is finished (use localhost if in dev mode)|
 |ALLOW_ORIGINS|Allowed origins (use localhost if in dev mode)|
+|SESSION_CACHE_DATABASE_ADDRESS|Address of the Redis database used for storing session data|
 |PORT|Port on which server will listen for requests|
 
 To run the backend just run the built binary
@@ -53,7 +54,15 @@ $ docker pull dusansimic/receipts-archive-backend
 $ docker run -e ... dusansimic/receipts-archive-backend
 ```
 
-Just add environment variables through the command since You can't use `.env` file this way.
+Other options is to use `.env` file with the following command.
+
+```sh
+$ docker run --env-file .env dusansimic/receipts-archive-backend
+```
+
+## Deployment
+
+If you want to deploy this with frontend, you should check [this](https://gitlab.com/makerns/receipts-archive/deployment) out.
 
 ## License
 MIT
