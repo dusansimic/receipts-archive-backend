@@ -5,12 +5,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
 	"github.com/jkomyno/nanoid"
 	"github.com/jmoiron/sqlx"
 	"github.com/markbates/goth"
@@ -75,7 +74,7 @@ func (o Options) AuthRequired() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		savedUserID, err := o.RDB.Get(ctx, sessionID.(string)).Result()
+		item, err := o.SessionStore.Get(sessionID.(string))
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"message": "session has expired or is invalid",
@@ -92,7 +91,8 @@ func (o Options) AuthRequired() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		if userID != savedUserID {
+
+		if userID != string(item.Value) {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"message": "session is invalid",
 			})
@@ -112,7 +112,7 @@ func (o Options) AuthRequired() gin.HandlerFunc {
 }
 
 // CreateSessionID creates a session and returns the id for the user.
-func CreateSessionID(ctx *gin.Context, rdb *redis.Client, user StructPublicID) error {
+func (o Options) CreateSessionID(ctx *gin.Context, user StructPublicID) error {
 	session := sessions.Default(ctx)
 
 	uuid, err := nanoid.Nanoid()
@@ -120,8 +120,12 @@ func CreateSessionID(ctx *gin.Context, rdb *redis.Client, user StructPublicID) e
 		return err
 	}
 
-	expiration, _ := time.ParseDuration("1h")
-	if err := rdb.Set(ctx, uuid, user.PublicID, expiration).Err(); err != nil {
+	sessionStoreItem := &memcache.Item{
+		Key:        uuid,
+		Value:      []byte(user.PublicID),
+		Expiration: 60 * 60, // In seconds (60 seconds is one minute and 60 minutes is one hour)
+	}
+	if err := o.SessionStore.Set(sessionStoreItem); err != nil {
 		return err
 	}
 
@@ -189,7 +193,7 @@ func (o Options) AuthHandler() gin.HandlerFunc {
 			return
 		}
 
-		if err := CreateSessionID(ctx, o.RDB, userID); err != nil {
+		if err := o.CreateSessionID(ctx, userID); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": err.Error(),
 			})
@@ -221,7 +225,7 @@ func (o Options) AuthCallbackHandler() gin.HandlerFunc {
 			return
 		}
 
-		if err := CreateSessionID(ctx, o.RDB, userID); err != nil {
+		if err := o.CreateSessionID(ctx, userID); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": err.Error(),
 			})
@@ -238,7 +242,7 @@ func (o Options) LogoutHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		session := sessions.Default(ctx)
 
-		if err := o.RDB.Del(ctx, session.Get("userID").(string)).Err(); err != nil {
+		if err := o.SessionStore.Delete(session.Get("userID").(string)); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": err.Error(),
 			})

@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/go-playground/validator"
-	"github.com/go-redis/redis/v8"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -16,7 +16,7 @@ type StructID struct {
 
 // Options stores database and validator options for handlers
 type Options struct {
-	DB  *sqlx.DB
-	RDB *redis.Client
-	V   *validator.Validate
+	DB           *sqlx.DB
+	SessionStore *memcache.Client
+	V            *validator.Validate
 }

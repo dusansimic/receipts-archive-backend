@@ -3,16 +3,16 @@ package engine
 import (
 	"fmt"
 
+	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/dusansimic/receipts-archive-backend/handlers"
 	"github.com/dusansimic/receipts-archive-backend/handlers/resolvers"
-	"github.com/dusansimic/receipts-archive-backend/handlers/stores"
 	"github.com/friendsofgo/graphiql"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/memcached"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
-	"github.com/go-redis/redis/v8"
 	"github.com/jmoiron/sqlx"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
@@ -28,14 +28,16 @@ type GoogleOAuthOptions struct {
 
 // Options stores options for new engine
 type Options struct {
-	AllowOrigins        []string
-	SessionCookieSecret []byte
-	GothicCookieSecret  []byte
+	AllowOrigins       []string
+	Database           *sqlx.DB
+	SessionStore       *memcache.Client
+	SessionStoreSecret []byte
+	GothicCookieSecret []byte
 	GoogleOAuthOptions
 }
 
 // NewEngine creates a new Gin engine
-func (o Options) NewEngine(db *sqlx.DB, rdb *redis.Client) *gin.Engine {
+func (o Options) NewEngine() *gin.Engine {
 	router := gin.Default()
 
 	corsConfig := cors.DefaultConfig()
@@ -43,15 +45,13 @@ func (o Options) NewEngine(db *sqlx.DB, rdb *redis.Client) *gin.Engine {
 	corsConfig.AllowCredentials = true
 	router.Use(cors.New(corsConfig))
 
-	session := stores.Session{
-		SessionOptions: sessions.Options{
-			MaxAge:   3600,
-			Path:     "/",
-			HttpOnly: true,
-		},
-		Secret: o.SessionCookieSecret,
-	}
-	router.Use(sessions.Sessions("auth_session", session.NewSessionStore()))
+	sessionStore := memcached.NewStore(o.SessionStore, "", o.SessionStoreSecret)
+	sessionStore.Options(sessions.Options{
+		MaxAge:   3600,
+		Path:     "/",
+		HttpOnly: true,
+	})
+	router.Use(sessions.Sessions("auth_session", sessionStore))
 
 	// Setup OAuth provider (Google)
 	gothic.Store = cookie.NewStore(o.GothicCookieSecret)
@@ -71,12 +71,12 @@ func (o Options) NewEngine(db *sqlx.DB, rdb *redis.Client) *gin.Engine {
 	}
 
 	handlers := handlers.Options{
-		DB:  db,
-		RDB: rdb,
-		V:   v,
+		DB:           o.Database,
+		SessionStore: o.SessionStore,
+		V:            v,
 	}
 	resolvers := resolvers.Options{
-		DB: db,
+		DB: o.Database,
 	}
 
 	auth := router.Group("/auth")

@@ -16,6 +16,7 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/markbates/goth v1.64.0
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/bradfitz/gomemcache v0.0.0-20190329173943-551aad21a668
 )
 
 replace github.com/graph-gophers/graphql-go v0.0.0-20200309224638-dae41bde9ef9 => github.com/dusansimic/graphql-go v0.0.0-20200527085124-d2e01d8becaa

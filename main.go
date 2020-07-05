@@ -25,25 +25,25 @@ func main() {
 		panic(err)
 	}
 
-	redisDB := database.RedisOptions{
-		Addr:     os.Getenv("SESSION_CACHE_DATABASE_ADDRESS"),
-		Password: os.Getenv("SESSION_CACHE_DATABASE_PASSWORD"),
-		DB:       0,
+	sessionStore := database.MemcachedOptions{
+		Addr: os.Getenv("SESSION_STORE_DATABASE_ADDRESS"),
 	}
-	rdb := redisDB.NewConnection()
+	sessionStoreConnection := sessionStore.NewConnection()
 
 	// engn because engine is used
 	engn := engine.Options{
-		AllowOrigins:        strings.Split(os.Getenv("ALLOW_ORIGINS"), ","),
-		SessionCookieSecret: []byte(os.Getenv("SESSION_COOKIE_SECRET")),
-		GothicCookieSecret:  []byte(os.Getenv("GOTHIC_COOKIE_SECRET")),
+		AllowOrigins:       strings.Split(os.Getenv("ALLOW_ORIGINS"), ","),
+		Database:           db,
+		SessionStore:       sessionStoreConnection,
+		SessionStoreSecret: []byte(os.Getenv("SESSION_COOKIE_SECRET")),
+		GothicCookieSecret: []byte(os.Getenv("GOTHIC_COOKIE_SECRET")),
 		GoogleOAuthOptions: engine.GoogleOAuthOptions{
 			ClientKey:    os.Getenv("GOOGLE_OAUTH_CLIENT_KEY"),
 			ClientSecret: os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
 			CallbackURL:  os.Getenv("GOOGLE_OAUTH_CALLBACK_URL"),
 		},
 	}
-	router := engn.NewEngine(db, rdb)
+	router := engn.NewEngine()
 
 	router.Run(":" + os.Getenv("PORT"))
 }

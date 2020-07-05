@@ -35,7 +35,7 @@ Here is the list of environment variables and their description.
 |GOOGLE_OAUTH_CALLBACK_URL|Callback url for oauth on the backend (use localhost if in dev mode)|
 |AUTH_CALLBACK|Callback url to the frontend after authentication is finished (use localhost if in dev mode)|
 |ALLOW_ORIGINS|Allowed origins (use localhost if in dev mode)|
-|SESSION_CACHE_DATABASE_ADDRESS|Address of the Redis database used for storing session data|
+|SESSION_STORE_DATABASE_ADDRESS|Address of the Memcached database used for storing session data|
 |PORT|Port on which server will listen for requests|
 
 To run the backend just run the built binary
